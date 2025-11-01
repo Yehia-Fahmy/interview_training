@@ -1,0 +1,4 @@
+{"ticket_id": "INC-1001", "severity": "critical", "outcome": true, "safety_violation": false, "latency_ms": 1234, "drafter": "agent-alpha", "reviewer": "agent-beta", "disagreement": false}
+{"ticket_id": "INC-1002", "severity": "high", "outcome": false, "safety_violation": true, "latency_ms": 2150, "drafter": "agent-alpha", "reviewer": "agent-beta", "disagreement": true}
+{"ticket_id": "INC-1003", "severity": "normal", "outcome": true, "safety_violation": false, "latency_ms": 980, "drafter": "agent-gamma", "reviewer": "agent-beta", "disagreement": false}
+
