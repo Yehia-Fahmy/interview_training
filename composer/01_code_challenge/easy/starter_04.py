@@ -10,6 +10,9 @@ def find_max(numbers):
     Snippet 1: Find maximum value in a list.
     Analyze the time and space complexity.
     """
+    # REVIEW: Straightforward single-pass max. Time: O(n), Space: O(1).
+    # Minor: you can start from the first element and iterate the rest to avoid
+    # a redundant comparison of numbers[0] with itself (micro-optimization).
     max_val = numbers[0]
     for num in numbers:
         if num > max_val:
@@ -22,6 +25,7 @@ def has_duplicate(numbers):
     Snippet 2: Check if list has duplicates.
     Analyze complexity and optimize if possible.
     """
+    # REVIEW: Correct but O(n^2). Kept for contrast with the optimized version.
     for i in range(len(numbers)):
         for j in range(i + 1, len(numbers)):
             if numbers[i] == numbers[j]:
@@ -34,6 +38,7 @@ def reverse_list(lst):
     Snippet 3: Reverse a list.
     Analyze complexity and optimize if possible.
     """
+    # REVIEW: Returns a new reversed list in O(n) time and O(n) space. Clear.
     n = len(lst)
     result = []
     for i in range(n):
@@ -47,7 +52,12 @@ def has_duplicate_optimized(numbers):
     Optimized version of has_duplicate.
     Improve the time complexity.
     """
-    pass
+    # REVIEW: Good use of a set: O(n) time, O(n) space. Early exit keeps it fast.
+    seen = set()
+    for n in numbers:
+        if n in seen: return True
+        seen.add(n)
+    return False
 
 
 def reverse_list_optimized(lst):
@@ -55,7 +65,15 @@ def reverse_list_optimized(lst):
     Optimized version of reverse_list.
     Consider improving space complexity or using in-place reversal.
     """
-    pass
+    # REVIEW: In-place reversal in O(n) time and O(1) extra space. Note this
+    # mutates the input list; document this behavior so callers are aware.
+    # Alternatives: `lst[::-1]` (new list) or `lst.reverse()` (in-place).
+    l = len(lst)
+    for i in range(l // 2):
+        tmp = lst[i]
+        lst[i] = lst[l - i - 1]
+        lst[l - i - 1] = tmp
+    return lst
 
 
 if __name__ == "__main__":

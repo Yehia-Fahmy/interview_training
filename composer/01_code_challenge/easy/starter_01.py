@@ -6,6 +6,7 @@ Your solution should handle large lists efficiently while maintaining
 the same functionality: deduplicate → filter evens → square.
 """
 
+
 def process_numbers(numbers):
     """
     Current inefficient implementation - creates multiple intermediate lists.
@@ -40,7 +41,19 @@ def process_numbers_optimized(numbers):
     - Reduce memory footprint significantly
     - Work efficiently with large lists (millions of elements)
     """
-    pass
+    # REVIEW: Good approach. Uses a set for O(1) dedup checks and a single
+    # output list. This preserves the order of first occurrences that pass the
+    # even filter, matching the spec pipeline. Time: O(n). Space: O(n) for the
+    # set plus the result. Clear and memory-efficient.
+    unique = set()
+    squared = []
+    for n in numbers:
+        if not n in unique:
+            unique.add(n)
+            if n % 2 == 0:
+                squared.append(n*n)
+    return squared
+
 
 
 if __name__ == "__main__":
