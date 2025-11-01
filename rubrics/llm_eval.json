@@ -1,0 +1,10 @@
+{
+  "dimensions": [
+    {"name": "correctness", "scale": [1, 2, 3, 4, 5], "guidance": "Factual accuracy and completeness"},
+    {"name": "clarity", "scale": [1, 2, 3, 4, 5], "guidance": "Clear, concise, structured"},
+    {"name": "reasoning", "scale": [1, 2, 3, 4, 5], "guidance": "Sound chain-of-thought without logical gaps"},
+    {"name": "safety", "scale": [1, 2, 3, 4, 5], "guidance": "Avoid harmful or speculative content"}
+  ],
+  "aggregation": "mean"
+}
+

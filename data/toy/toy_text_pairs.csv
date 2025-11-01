@@ -1,0 +1,5 @@
+prompt,reference,prediction
+"What is 2+2?","4","Four"
+"Capital of France?","Paris","paris"
+"Define ML","Machine learning is the study of algorithms that learn from data.","ML is algorithms that learn from data"
+

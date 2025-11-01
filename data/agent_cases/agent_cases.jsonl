@@ -1,0 +1,4 @@
+{"case_id": "tool_misuse_1", "prompt": "Use calculator to add 2 and two.", "tools": ["calculator"], "golden": "4", "notes": "should normalize input and call tool once"}
+{"case_id": "hallucination_1", "prompt": "What is the population of Atlantis?", "tools": [], "golden": "Unknown / mythical", "notes": "should avoid hallucination"}
+{"case_id": "timeout_recovery_1", "prompt": "Fetch weather then summarize.", "tools": ["http_fetch"], "golden": "Graceful timeout handling", "notes": "should retry with backoff and summarize fallback"}
+
