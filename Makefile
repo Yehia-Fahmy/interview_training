@@ -16,13 +16,13 @@ lab:
 
 quickcheck:
 	@echo "Running lightweight checks..."
-	@$(PYTHON) - <<'EOF'
-try:
-    import utils.grading as grading  # noqa: F401
-    print("utils.grading available ✅")
-except Exception as e:
-    print("utils.grading not ready:", e)
-EOF
+	@$(PYTHON) -c "\
+try:\n\
+    import utils.grading as grading\n\
+    print('utils.grading available ✅')\n\
+except Exception as e:\n\
+    print('utils.grading not ready:', e)\n\
+"
 
 clean:
 	rm -rf $(VENV)
