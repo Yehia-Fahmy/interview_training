@@ -46,6 +46,40 @@ python starter_clear.py --window 10 < sample.log
 python starter_clear.py --memory-profile
 ```
 
+## Run with provided sample and expected output
+
+From the `gpt/code_challenge/easy/` directory:
+
+```bash
+# 1) Run against the provided sample log (default window=3 here for grading)
+python starter_clear.py --window 3 < sample.log
+
+# Expected stdout:
+```
+```
+2025-11-01T10:00:00Z a1 avg=100.00 median=100.00 max=100
+2025-11-01T10:00:01Z a1 avg=150.00 median=150.00 max=200
+2025-11-01T10:00:02Z a2 avg=50.00 median=50.00 max=50
+2025-11-01T10:00:03Z a1 avg=116.67 median=100.00 max=200
+2025-11-01T10:00:04Z a2 avg=62.50 median=62.50 max=75
+2025-11-01T10:00:06Z a3 avg=120.00 median=120.00 max=120
+```
+```
+
+Note: Malformed lines in `sample.log` are skipped with reasons emitted to stderr, so they do not appear in stdout.
+
+## Grade your results automatically
+
+We provide a small grading script that diffs your stdout against the expected output for `--window 3`:
+
+```bash
+./grade.sh
+```
+
+It prints `PASS` if your output matches `expected_output_window3.txt`, or `FAIL` with a unified diff otherwise.
+
+Tip: Ensure you have not left any debug `print()` statements in `parse_line_with_reason`, as they will pollute stdout and cause grading to fail.
+
 ## Constraints & Expectations
 - Aim to finish core requirements in 30–45 minutes.
 - Standard library only (no third-party deps).

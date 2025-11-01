@@ -51,6 +51,11 @@ def parse_line_with_reason(line: str) -> Tuple[Optional[LogEntry], Optional[str]
     """
 
     # TODO: replace the placeholder implementation below
+    timestamp, agent_id, payload_bytes = line.split(" ")
+    print(timestamp)
+    print(agent_id)
+    print(payload_bytes)
+    print("=======")
     parts = line.strip().split()
     if len(parts) != 3:
         return None, "expected 3 fields: <timestamp> <agent_id> <payload_bytes>"
