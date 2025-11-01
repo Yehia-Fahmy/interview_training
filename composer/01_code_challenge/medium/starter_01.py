@@ -24,23 +24,37 @@ class EfficientCounter:
     then optimize for memory when there are many duplicates.
     """
     def __init__(self):
-        pass
+        self.list = []
+        self.max_elements = 0
     
     def add(self, value):
         """Add or increment count for value"""
-        pass
+        if value >= self.max_elements:
+            self.max_elements = value
+            new_list = [0 for _ in range(value+1)]
+            for v in range(len(self.list)):
+                new_list[v] = self.list[v]
+            self.list = new_list
+        self.list[value] += 1
     
     def get_count(self, value):
         """Return count for value, 0 if not present"""
-        pass
+        if self.max_elements == 0: return 0
+        if value > self.max_elements: return 0
+        return self.list[value]
     
     def get_all_items(self):
         """Return list of (value, count) tuples"""
-        pass
+        if self.max_elements == 0: return []
+        ans = []
+        for val in range(self.max_elements+1):
+            if self.list[val] > 0:
+                ans.append((val, self.list[val]))
+        return ans
     
     def memory_usage(self):
         """Return approximate memory usage in bytes"""
-        pass
+        return self.max_elements * 26
 
 
 def compare_implementations():
