@@ -49,18 +49,16 @@ def parse_line_with_reason(line: str) -> Tuple[Optional[LogEntry], Optional[str]
     - On success: return (LogEntry, None)
     - On failure: return (None, "reason for failure")
     """
-
-    # TODO: replace the placeholder implementation below
-    timestamp, agent_id, payload_bytes = line.split(" ")
-    print(timestamp)
-    print(agent_id)
-    print(payload_bytes)
-    print("=======")
-    parts = line.strip().split()
+    
+    parts = line.split(" ")
     if len(parts) != 3:
         return None, "expected 3 fields: <timestamp> <agent_id> <payload_bytes>"
 
     ts, agent, payload_str = parts
+    if len(ts) < len("2025-11-01T10:00:03Z"):
+        return None, "timestamp is too small"
+    if not len(agent) == 2:
+        return None, "agent id not valid"
     try:
         payload = int(payload_str)
     except ValueError:
