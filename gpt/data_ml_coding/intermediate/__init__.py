@@ -1,2 +1,0 @@
-# Intermediate exercise package marker.
-
