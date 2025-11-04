@@ -28,6 +28,8 @@ python test_all.py --exercise 4
 1. **Exercise 1: Memory-Mapped File Processing**
    - Process large binary files without loading into RAM
    - Compare mmap vs standard I/O performance
+   - Extension: Multiprocessing for parallel processing
+   - Benchmark different approaches (single-threaded vs multiprocessing)
 
 2. **Exercise 2: Garbage Collection Optimization**
    - Profile GC behavior
@@ -77,6 +79,12 @@ python test_all.py
 **Exercise 1 (mmap)**:
 - Make sure you have write permissions for temp directory
 - Large test files may take time to generate
+- **Multiprocessing Extension**:
+  - The script includes a `compare_performance()` function that benchmarks all approaches
+  - Run the script directly to see performance comparisons
+  - Verify all approaches produce identical results
+  - Check that multiprocessing shows speedup on multi-core systems
+  - Test with different process counts (2, 4, 8) to find optimal performance
 
 **Exercise 2 (GC)**:
 - GC behavior varies by Python version
@@ -94,7 +102,11 @@ python test_all.py
 
 For more thorough testing:
 
-1. **Exercise 1**: Test with larger files (uncomment larger num_integers)
+1. **Exercise 1**: 
+   - Test with larger files (uncomment larger num_integers)
+   - **Multiprocessing**: Run `compare_performance()` to benchmark all approaches
+   - Test with different file sizes to see scaling behavior
+   - Compare performance across different numbers of processes
 2. **Exercise 2**: Compare GC stats before/after optimization
 3. **Exercise 3**: Test with larger graphs (millions of nodes)
 4. **Exercise 4**: Measure throughput with different producer/consumer ratios

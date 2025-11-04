@@ -138,9 +138,30 @@ def process_standard_io(filename):
     return stats
 
 
+# ============================================================================
+# MULTIPROCESSING EXTENSION (Guided Exercise)
+# ============================================================================
+# Implement parallel processing of large files using multiprocessing.
+# 
+# Key Concepts:
+# - Split file into chunks that can be processed independently
+# - Use multiprocessing.Pool to distribute work across CPU cores
+# - Ensure integer boundary alignment to avoid reading partial integers
+# - Aggregate results from all worker processes
+#
+# Implementation Steps:
+# 1. Complete _process_chunk_worker() - processes a single chunk
+# 2. Complete _split_file_into_chunks() - divides file into chunks
+# 3. Complete process_with_multiprocessing() - orchestrates parallel processing
+# ============================================================================
+
+
 def _process_chunk_worker(args):
     """
     Worker function for multiprocessing. Processes a chunk of the file.
+    
+    This function is called by each worker process to process a specific byte range
+    of the file. It must handle integer boundary alignment to avoid reading partial integers.
     
     Args:
         args: Tuple of (filename, start_offset, end_offset)
@@ -158,41 +179,26 @@ def _process_chunk_worker(args):
         'count': 0
     }
     
-    # Ensure we're aligned to integer boundaries
-    # If start_offset is not aligned, align it forward
-    if start_offset % INT_SIZE != 0:
-        start_offset += (INT_SIZE - (start_offset % INT_SIZE))
+    # TODO: Align offsets to integer boundaries
+    # Hint: Ensure start_offset and end_offset are multiples of INT_SIZE (4 bytes)
+    # If start_offset is not aligned, round it forward to the next integer boundary
+    # Round end_offset backward to the nearest integer boundary
     
-    # Ensure end_offset is aligned
-    end_offset = (end_offset // INT_SIZE) * INT_SIZE
+    # TODO: Check if aligned offsets are valid
+    # If start_offset >= end_offset after alignment, return empty stats
     
-    if start_offset >= end_offset:
-        return stats
+    # TODO: Open file and create memory map for this chunk
+    # Hint: Use 'with open(filename, 'rb') as f:' and 'with mmap.mmap(...) as mm:'
+    # Use mmap.ACCESS_READ for read-only access
+    # Extract the chunk using slicing: mm[start_offset:end_offset]
     
-    try:
-        with open(filename, 'rb') as f:
-            with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
-                chunk = mm[start_offset:end_offset]
-                
-                if len(chunk) == 0:
-                    return stats
-                
-                # Ensure chunk size is multiple of INT_SIZE
-                aligned_size = (len(chunk) // INT_SIZE) * INT_SIZE
-                if aligned_size == 0:
-                    return stats
-                
-                chunk = chunk[:aligned_size]
-                integers = struct.unpack(f"{len(chunk) // INT_SIZE}i", chunk)
-                
-                for n in integers:
-                    stats['min'] = min(n, stats['min'])
-                    stats['max'] = max(n, stats['max'])
-                    stats['sum'] += n
-                    stats['count'] += 1
-    except Exception as e:
-        print(f"Error processing chunk [{start_offset}:{end_offset}]: {e}")
-        return stats
+    # TODO: Process the chunk
+    # Ensure chunk length is a multiple of INT_SIZE (truncate if needed)
+    # Use struct.unpack() to convert bytes to integers
+    # Update stats for each integer: min, max, sum, count
+    
+    # TODO: Add error handling
+    # Wrap file operations in try-except to handle potential errors gracefully
     
     return stats
 
@@ -201,6 +207,10 @@ def _split_file_into_chunks(filename, num_processes):
     """
     Split file into chunks for parallel processing.
     Ensures chunks are aligned to integer boundaries.
+    
+    This function divides the file into approximately equal-sized chunks that can be
+    processed in parallel. Each chunk must be aligned to 4-byte boundaries to ensure
+    we never read partial integers.
     
     Args:
         filename: Path to binary file
@@ -215,20 +225,26 @@ def _split_file_into_chunks(filename, num_processes):
     if file_size == 0:
         return []
     
-    # Calculate chunk size
-    chunk_size = (file_size + num_processes - 1) // num_processes
-    # Align chunk size to integer boundaries
-    chunk_size = ((chunk_size + INT_SIZE - 1) // INT_SIZE) * INT_SIZE
+    # TODO: Calculate chunk size per process
+    # Hint: Divide file_size by num_processes using ceiling division
+    # Formula: (file_size + num_processes - 1) // num_processes
+    chunk_size = None
     
+    # TODO: Align chunk size to integer boundaries
+    # Hint: Round chunk_size up to the nearest multiple of INT_SIZE
+    # Formula: ((chunk_size + INT_SIZE - 1) // INT_SIZE) * INT_SIZE
+    
+    # TODO: Create chunks list
+    # Initialize an empty list to store chunk tuples
     chunks = []
-    start = 0
     
-    while start < file_size:
-        end = min(start + chunk_size, file_size)
-        # Ensure end is aligned to integer boundaries
-        end = (end // INT_SIZE) * INT_SIZE
-        chunks.append((filename, start, end))
-        start = end
+    # TODO: Iterate through file and create chunks
+    # Start from offset 0
+    # While start < file_size:
+    #   - Calculate end = min(start + chunk_size, file_size)
+    #   - Align end to integer boundary: (end // INT_SIZE) * INT_SIZE
+    #   - Append tuple (filename, start, end) to chunks
+    #   - Update start = end
     
     return chunks
 
@@ -241,6 +257,13 @@ def process_with_multiprocessing(filename, num_processes=None):
     across multiple CPU cores. Each worker process uses memory mapping for
     efficient access to its assigned chunk.
     
+    Steps:
+    1. Determine number of processes (use cpu_count() if None)
+    2. Handle edge case: empty file
+    3. Split file into chunks using _split_file_into_chunks()
+    4. Use multiprocessing.Pool to process chunks in parallel
+    5. Aggregate results from all workers
+    
     Args:
         filename: Path to binary file
         num_processes: Number of processes to use (default: cpu_count())
@@ -248,49 +271,41 @@ def process_with_multiprocessing(filename, num_processes=None):
     Returns:
         dict with keys: 'min', 'max', 'sum', 'count'
     """
-    if num_processes is None:
-        num_processes = cpu_count()
+    # TODO: Set default number of processes
+    # If num_processes is None, use cpu_count() to use all available CPU cores
     
-    file_size = os.path.getsize(filename)
-    if file_size == 0:
-        return {
-            'min': float('inf'),
-            'max': float('-inf'),
-            'sum': 0,
-            'count': 0
-        }
+    # TODO: Handle empty file edge case
+    # Get file size using os.path.getsize()
+    # If file_size == 0, return empty stats dict
     
-    # Split file into chunks
-    chunks = _split_file_into_chunks(filename, num_processes)
+    # TODO: Split file into chunks
+    # Call _split_file_into_chunks(filename, num_processes) to get list of chunks
+    # Each chunk is a tuple: (filename, start_offset, end_offset)
     
-    if not chunks:
-        return {
-            'min': float('inf'),
-            'max': float('-inf'),
-            'sum': 0,
-            'count': 0
-        }
+    # TODO: Check if chunks list is empty
+    # If chunks list is empty, return empty stats dict
     
-    # Process chunks in parallel
-    with Pool(processes=num_processes) as pool:
-        results = pool.map(_process_chunk_worker, chunks)
+    # TODO: Process chunks in parallel using multiprocessing.Pool
+    # Hint: Use 'with Pool(processes=num_processes) as pool:'
+    # Use pool.map(_process_chunk_worker, chunks) to process all chunks
+    # This returns a list of result dictionaries, one per chunk
     
-    # Aggregate results from all workers
-    stats = {
+    # TODO: Aggregate results from all workers
+    # Initialize stats dict with default values (inf for min, -inf for max, 0 for sum/count)
+    # Iterate through results list
+    # For each result that has count > 0:
+    #   - Update stats['min'] = min(stats['min'], result['min'])
+    #   - Update stats['max'] = max(stats['max'], result['max'])
+    #   - Add result['sum'] to stats['sum']
+    #   - Add result['count'] to stats['count']
+    
+    # Placeholder return (replace with actual implementation)
+    return {
         'min': float('inf'),
         'max': float('-inf'),
         'sum': 0,
         'count': 0
     }
-    
-    for result in results:
-        if result['count'] > 0:
-            stats['min'] = min(stats['min'], result['min'])
-            stats['max'] = max(stats['max'], result['max'])
-            stats['sum'] += result['sum']
-            stats['count'] += result['count']
-    
-    return stats
 
 
 def benchmark_approach(func, filename, name, num_runs=3, warmup_runs=1):
