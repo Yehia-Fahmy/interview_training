@@ -35,22 +35,33 @@ class ClassificationMetrics:
     
     def confusion_matrix(self) -> np.ndarray:
         """Compute confusion matrix from scratch."""
-        # TODO: Implement confusion matrix
-        # Shape: (n_classes, n_classes)
-        # Element [i, j] = number of samples with true label i and predicted label j
-        pass
+        conf_matrix = np.zeros((self.n_classes, self.n_classes))
+        for i in range(len(self.y_true)):
+            true_idx = np.where(self.classes == self.y_true[i])[0][0]
+            pred_idx = np.where(self.classes == self.y_pred[i])[0][0]
+            conf_matrix[true_idx][pred_idx] += 1
+        return conf_matrix
+
     
     def accuracy(self) -> float:
         """Compute accuracy."""
-        # TODO: Implement accuracy = (TP + TN) / (TP + TN + FP + FN)
-        # Or simply: correct_predictions / total_predictions
-        pass
+        total_correct = 0
+        total = len(self.y_true)
+        for i in range(total):
+            if self.y_pred[i] == self.y_true[i]: total_correct += 1
+        return total_correct / total
     
     def precision_per_class(self) -> Dict[int, float]:
         """Compute precision for each class."""
-        # TODO: Implement precision = TP / (TP + FP) for each class
-        # Use confusion matrix to compute TP and FP
-        pass
+        TP = [0 for _ in range(self.n_classes)]
+        AP = [0 for _ in range(self.n_classes)]
+        conf_matrix = self.confusion_matrix()
+        d = {}
+        for i in range(self.n_classes):
+            AP[i] += np.sum(conf_matrix[:, i])
+            TP[i] = conf_matrix[i][i]
+            d[self.classes[i]] = TP[i] / AP[i] if AP[i] > 0 else 0.0
+        return d
     
     def recall_per_class(self) -> Dict[int, float]:
         """Compute recall for each class."""
