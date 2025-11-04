@@ -48,3 +48,4 @@ model_registry/
 .DS_Store
 Thumbs.db
 
+*.bin
