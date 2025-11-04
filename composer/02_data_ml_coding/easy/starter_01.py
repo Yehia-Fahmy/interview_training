@@ -38,27 +38,29 @@ class LogisticRegression:
     
     def _sigmoid(self, z: np.ndarray) -> np.ndarray:
         """Compute sigmoid activation function."""
-        # TODO: Implement sigmoid function
-        # Hint: sigmoid(z) = 1 / (1 + exp(-z))
-        # Be careful with numerical stability (clip z values)
-        pass
+        # Clip to prevent overflow in exp()
+        z_clipped = np.clip(z, -500, 500)
+        return 1 / (1 + np.exp(-z_clipped))
     
     def _compute_loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """Compute binary cross-entropy loss."""
-        # TODO: Implement loss function
-        # Hint: loss = -1/n * sum(y*log(p) + (1-y)*log(1-p))
-        # where p = sigmoid(X @ weights + bias)
-        # Don't forget L2 regularization if self.regularization > 0
-        pass
+        y_pred = X @ self.weights + self.bias
+        p = self._sigmoid(y_pred)
+        epsilon = 1e-15
+        p = np.clip(p, epsilon, 1 - epsilon)
+        n = len(y_pred)
+        loss = (-1 / n) * np.sum(y * np.log(p) + (1 - y) * np.log(1 - p))
+        if self.regularization > 0:
+            loss += (self.regularization / 2) * np.sum(self.weights ** 2)
+        return loss
     
     def _compute_gradient(self, X: np.ndarray, y: np.ndarray) -> tuple:
         """Compute gradients for weights and bias."""
-        # TODO: Implement gradient computation
-        # Hint: 
-        # - gradient_weights = 1/n * X.T @ (predictions - y) + regularization * weights
-        # - gradient_bias = 1/n * sum(predictions - y)
-        # where predictions = sigmoid(X @ weights + bias)
-        pass
+        n = len(y)
+        y_pred = self._sigmoid(X @ self.weights + self.bias)
+        g_w = 1 / n * X.T @ (y_pred - y) + self.regularization * self.weights
+        g_b = 1 / n * np.sum(y_pred - y)
+        return (g_w, g_b)
     
     def fit(self, X: np.ndarray, y: np.ndarray) -> 'LogisticRegression':
         """
@@ -78,9 +80,9 @@ class LogisticRegression:
         
         # Gradient descent
         for iteration in range(self.max_iter):
-            # TODO: Compute gradients and update weights/bias
-            # Use self._compute_gradient() and self._compute_loss()
-            
+            g_w, g_b = self._compute_gradient(X, y)
+            self.weights -= g_w * self.learning_rate
+            self.bias -= g_b * self.learning_rate
             # Track loss
             loss = self._compute_loss(X, y)
             self.loss_history.append(loss)
@@ -94,15 +96,11 @@ class LogisticRegression:
     
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
         """Return probability estimates."""
-        # TODO: Compute probabilities using sigmoid
-        # Return shape: (n_samples,)
-        pass
+        return self._sigmoid(X @ self.weights + self.bias)
     
     def predict(self, X: np.ndarray) -> np.ndarray:
         """Return class predictions."""
-        # TODO: Use predict_proba() and threshold at 0.5
-        # Return shape: (n_samples,) with values in {0, 1}
-        pass
+        return (self.predict_proba(X) > 0.5).astype(int)
 
 
 # Test your implementation
