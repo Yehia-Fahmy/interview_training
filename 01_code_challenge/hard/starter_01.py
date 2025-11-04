@@ -11,9 +11,11 @@ Requirements:
 - Handle edge cases (empty file, negative numbers, etc.)
 """
 
+from math import e
 import mmap
 import struct
 import os
+import random
 
 
 def generate_test_file(filename, num_integers=1000000):
@@ -24,9 +26,12 @@ def generate_test_file(filename, num_integers=1000000):
         filename: Path to output file
         num_integers: Number of integers to write
     """
-    # TODO: Implement file generation
-    # Write 4-byte integers using struct.pack('i', value)
-    pass
+    num_chunks = 1000
+    chunk_size = num_integers // num_chunks
+    with open(filename, 'wb') as f:
+        for i in range(num_chunks):
+            chunk = [random.randint(-2147483648, 2147483647) for _ in range(chunk_size)]
+            f.write(struct.pack(f"{chunk_size}i", *chunk))
 
 
 def process_with_mmap(filename):
@@ -45,16 +50,27 @@ def process_with_mmap(filename):
         'sum': 0,
         'count': 0
     }
-    
-    # TODO: Implement using mmap
-    # Hint: Use mmap.mmap() with ACCESS_READ
-    # Process in chunks (e.g., 1MB at a time) to handle very large files
-    # Use struct.unpack() to read integers
+    INT_SIZE = 4
+    CHUNK_SIZE = 1000
     
     with open(filename, 'rb') as f:
-        # Your implementation here
-        pass
-    
+        file_size = os.path.getsize(filename)
+        with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
+            total_ints = file_size // INT_SIZE
+
+            for i in range(total_ints // CHUNK_SIZE):
+                s = i * INT_SIZE
+                end = min((i + CHUNK_SIZE) * INT_SIZE, file_size)
+                chunk = mm[s:end]
+
+                ints_in_chunk = len(chunk) // INT_SIZE
+                a = struct.unpack(f"{ints_in_chunk}i", chunk)
+
+                for n in a:
+                    stats['min'] = min(n, stats['min'])
+                    stats['max'] = max(n, stats['max'])
+                    stats['sum'] += n
+                stats['count'] += ints_in_chunk
     return stats
 
 
@@ -74,9 +90,27 @@ def process_standard_io(filename):
         'sum': 0,
         'count': 0
     }
+    INT_SIZE = 4
+    CHUNK_SIZE = 1000  # Number of integers per chunk
+    BYTES_PER_CHUNK = CHUNK_SIZE * INT_SIZE
     
-    # TODO: Implement standard file I/O version
-    # Read file normally and process integers
+    with open(filename, 'rb') as f:
+        while True:
+            chunk = f.read(BYTES_PER_CHUNK)
+            if not chunk:
+                break
+            
+            ints_in_chunk = len(chunk) // INT_SIZE
+            if ints_in_chunk == 0:
+                break
+            
+            integers = struct.unpack(f"{ints_in_chunk}i", chunk)
+            
+            for n in integers:
+                stats['min'] = min(n, stats['min'])
+                stats['max'] = max(n, stats['max'])
+                stats['sum'] += n
+            stats['count'] += ints_in_chunk
     
     return stats
 
@@ -85,15 +119,15 @@ if __name__ == "__main__":
     test_file = 'large_data.bin'
     
     # Generate test file (uncomment when ready)
-    # generate_test_file(test_file, 10000000)
+    generate_test_file(test_file, 10000000)
     
     # Compare approaches
-    # if os.path.exists(test_file):
-    #     mmap_stats = process_with_mmap(test_file)
-    #     std_stats = process_standard_io(test_file)
-    #     
-    #     print("Memory-mapped:", mmap_stats)
-    #     print("Standard I/O:", std_stats)
-    # else:
-    #     print(f"Test file {test_file} not found. Generate it first!")
+    if os.path.exists(test_file):
+        mmap_stats = process_with_mmap(test_file)
+        std_stats = process_standard_io(test_file)
+        
+        print("Memory-mapped:", mmap_stats)
+        print("Standard I/O:", std_stats)
+    else:
+        print(f"Test file {test_file} not found. Generate it first!")
 
