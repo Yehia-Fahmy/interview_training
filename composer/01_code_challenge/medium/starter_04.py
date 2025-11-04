@@ -13,7 +13,7 @@ Requirements:
 
 import time
 import sys
-from collections import OrderedDict
+from collections import OrderedDict, deque
 from functools import wraps
 
 
@@ -36,23 +36,38 @@ class LRUCache:
     - clear(): Clear all cached entries
     """
     def __init__(self, max_size=128):
-        pass
+        self.q = []
+        self.cache = {}
+        self.max_size = max_size
     
     def get(self, key):
         """Get value from cache"""
-        pass
+        if key in self.cache:
+            for i in range(len(self.q)):
+                if self.q[i] == key:
+                    self.q.pop(i)
+                    break
+            self.q.append(key)
+            return self.cache[key]
+        return None  
     
     def put(self, key, value):
         """Add value to cache"""
-        pass
+        if len(self.q) >= self.max_size:
+            to_remove = self.q.pop()
+            del self.cache[to_remove]
+        self.cache[key] = value
+        self.q.append(key)
+        return value
     
     def clear(self):
         """Clear cache"""
-        pass
+        self.q = []
+        self.cache = {}
     
     def size(self):
         """Return current cache size"""
-        pass
+        return len(self.q)
 
 def lru_cache_decorator(max_size=128):
     """
@@ -63,7 +78,41 @@ def lru_cache_decorator(max_size=128):
         def my_function(x):
             return expensive_computation(x)
     """
-    pass
+    def decorator(func):
+        # Create a cache instance for this specific function
+        cache = LRUCache(max_size)
+        
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            # Create cache key from function arguments
+            # Handle simple case: single positional argument
+            if args and not kwargs:
+                key = args[0] if len(args) == 1 else tuple(args)
+            # Handle case with keyword arguments
+            elif kwargs:
+                key = (args, tuple(sorted(kwargs.items())))
+            # Handle no arguments (edge case)
+            else:
+                key = ()
+            
+            # Check if result is in cache
+            result = cache.get(key)
+            if result is not None:
+                return result
+            
+            # Cache miss: compute the result
+            result = func(*args, **kwargs)
+            
+            # Store result in cache
+            cache.put(key, result)
+            
+            return result
+        
+        # Attach cache to wrapper function for inspection/clearing
+        wrapper.cache = cache
+        return wrapper
+    
+    return decorator
 
 
 # ============================================================================
@@ -182,11 +231,11 @@ def lru_cache_decorator_improved(max_size=128):
     return decorator
 
 
-# Apply decorator to expensive_computation (to be implemented)
-# @lru_cache_decorator(max_size=50)
-# def cached_computation(n):
-#     """Cached version of expensive_computation"""
-#     return expensive_computation(n)
+# Apply decorator to expensive_computation
+@lru_cache_decorator(max_size=50)
+def cached_computation(n):
+    """Cached version of expensive_computation"""
+    return expensive_computation(n)
 
 
 # Improved version
