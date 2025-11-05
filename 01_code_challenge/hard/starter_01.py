@@ -178,33 +178,20 @@ def _process_chunk_worker(args):
         'sum': 0,
         'count': 0
     }
-    
-    # TODO: Align offsets to integer boundaries
-    # Hint: Ensure start_offset and end_offset are multiples of INT_SIZE (4 bytes)
-    # If start_offset is not aligned, round it forward to the next integer boundary
-    # Round end_offset backward to the nearest integer boundary
+
     while not start_offset % INT_SIZE == 0:
         start_offset += 1
     
     while not end_offset % INT_SIZE == 0:
         end_offset -= 1
-    
-    # TODO: Check if aligned offsets are valid
-    # If start_offset >= end_offset after alignment, return empty stats
+
     if start_offset >= end_offset: return stats
-    
-    # TODO: Open file and create memory map for this chunk
-    # Hint: Use 'with open(filename, 'rb') as f:' and 'with mmap.mmap(...) as mm:'
-    # Use mmap.ACCESS_READ for read-only access
-    # Extract the chunk using slicing: mm[start_offset:end_offset]
+
     with open(filename, "rb") as f:
         with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as mm:
             chunk = mm[start_offset:end_offset]
     if len(chunk) == 0: return stats
-    # TODO: Process the chunk
-    # Ensure chunk length is a multiple of INT_SIZE (truncate if needed)
-    # Use struct.unpack() to convert bytes to integers
-    # Update stats for each integer: min, max, sum, count
+
     ints_in_chunk = len(chunk) // INT_SIZE
     aligned_size = ints_in_chunk * INT_SIZE
     chunk = chunk[:aligned_size]
@@ -240,27 +227,13 @@ def _split_file_into_chunks(filename, num_processes):
     
     if file_size == 0:
         return []
-    
-    # TODO: Calculate chunk size per process
-    # Hint: Divide file_size by num_processes using ceiling division
-    # Formula: (file_size + num_processes - 1) // num_processes
+
     chunk_size = (file_size + num_processes - 1) // num_processes
     
-    # TODO: Align chunk size to integer boundaries
-    # Hint: Round chunk_size up to the nearest multiple of INT_SIZE
-    # Formula: ((chunk_size + INT_SIZE - 1) // INT_SIZE) * INT_SIZE
     aligned_chunk_size = ((chunk_size + INT_SIZE - 1) // INT_SIZE) * INT_SIZE
-    # TODO: Create chunks list
-    # Initialize an empty list to store chunk tuples
+
     chunks = []
-    
-    # TODO: Iterate through file and create chunks
-    # Start from offset 0
-    # While start < file_size:
-    #   - Calculate end = min(start + chunk_size, file_size)
-    #   - Align end to integer boundary: (end // INT_SIZE) * INT_SIZE
-    #   - Append tuple (filename, start, end) to chunks
-    #   - Update start = end
+
     start = 0
     while start < file_size:
         end = min(start + aligned_chunk_size, file_size)
@@ -299,42 +272,22 @@ def process_with_multiprocessing(filename, num_processes=None):
         'sum': 0,
         'count': 0
     }
-    # TODO: Set default number of processes
-    # If num_processes is None, use cpu_count() to use all available CPU cores
+
     if not num_processes:
         num_processes = os.cpu_count()
-    
-    
-    # TODO: Handle empty file edge case
-    # Get file size using os.path.getsize()
-    # If file_size == 0, return empty stats dict
+
     file_size = os.path.getsize(filename)
     if file_size == 0: return stats
-    
-    # TODO: Split file into chunks
-    # Call _split_file_into_chunks(filename, num_processes) to get list of chunks
-    # Each chunk is a tuple: (filename, start_offset, end_offset)
+
     chunks = _split_file_into_chunks(filename, num_processes)
     
     # TODO: Check if chunks list is empty
     # If chunks list is empty, return empty stats dict
     if len(chunks) == 0: return stats
-    
-    # TODO: Process chunks in parallel using multiprocessing.Pool
-    # Hint: Use 'with Pool(processes=num_processes) as pool:'
-    # Use pool.map(_process_chunk_worker, chunks) to process all chunks
-    # This returns a list of result dictionaries, one per chunk
+
     with Pool(num_processes) as pool:
         results_list = pool.map(_process_chunk_worker, chunks)
-    
-    # TODO: Aggregate results from all workers
-    # Initialize stats dict with default values (inf for min, -inf for max, 0 for sum/count)
-    # Iterate through results list
-    # For each result that has count > 0:
-    #   - Update stats['min'] = min(stats['min'], result['min'])
-    #   - Update stats['max'] = max(stats['max'], result['max'])
-    #   - Add result['sum'] to stats['sum']
-    #   - Add result['count'] to stats['count']
+
     for res in results_list:
         if res['count'] > 0:
             stats['count'] += res['count']
