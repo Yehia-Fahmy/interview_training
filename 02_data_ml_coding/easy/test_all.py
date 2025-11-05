@@ -20,6 +20,7 @@ import pandas as pd
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+from sklearn.ensemble import RandomForestClassifier
 
 # Get the directory where this script is located
 SCRIPT_DIR = Path(__file__).parent.absolute()
@@ -441,6 +442,391 @@ def test_exercise_4():
         return 0, 1
 
 
+def test_exercise_5():
+    """Test Exercise 5: Data Cleaning and Preprocessing with Pandas"""
+    print(f"\n{Colors.BOLD}{Colors.CYAN}{'='*60}")
+    print("Exercise 5: Data Cleaning and Preprocessing with Pandas")
+    print(f"{'='*60}{Colors.RESET}")
+    
+    try:
+        student_module = load_module('starter_05.py', 'starter_05')
+        solution_module = load_module('solution_05.py', 'solution_05')
+        
+        # Create messy sample data
+        messy_data = pd.DataFrame({
+            'id': [1, 2, 2, 3, 4, None, 5],
+            'name': ['Alice', 'Bob', 'bob', 'Charlie', 'DAVE', '', 'Eve'],
+            'age': [25, 30, 30, None, 150, 28, 35],
+            'salary': [50000, '60000', 60000, None, 80000, 55000, 'invalid'],
+            'date_joined': ['2020-01-15', '2020/02/20', 'invalid', '2020-03-10', None, '2020-04-01', '2020-05-15']
+        })
+        
+        passed = 0
+        failed = 0
+        
+        # Test student implementation
+        try:
+            cleaner = student_module.DataCleaner(handle_missing='mean', handle_duplicates=True)
+            cleaned = cleaner.clean(messy_data, 
+                                    date_columns=['date_joined'],
+                                    numeric_columns=['age', 'salary'])
+            
+            report = cleaner.get_report()
+            
+            print(f"\n{Colors.BLUE}Student Solution:{Colors.RESET}")
+            print(f"  Cleaned shape: {cleaned.shape}")
+            print(f"  Report keys: {list(report.keys())}")
+            
+            # Validate output
+            if cleaned.shape[0] <= messy_data.shape[0]:
+                print(f"{Colors.GREEN}✓ Shape is valid{Colors.RESET}")
+                passed += 1
+            else:
+                print(f"{Colors.RED}✗ Shape is invalid{Colors.RESET}")
+                failed += 1
+            
+            if not cleaned.isnull().all().any():
+                print(f"{Colors.GREEN}✓ No all-NaN columns{Colors.RESET}")
+                passed += 1
+            else:
+                print(f"{Colors.RED}✗ All-NaN columns found{Colors.RESET}")
+                failed += 1
+                
+        except Exception as e:
+            print(f"{Colors.RED}✗ Student solution: ERROR{Colors.RESET}")
+            print(f"  {str(e)}")
+            traceback.print_exc()
+            failed += 2
+        
+        # Test reference solution
+        try:
+            ref_cleaner = solution_module.DataCleaner(handle_missing='mean', handle_duplicates=True)
+            ref_cleaned = ref_cleaner.clean(messy_data, 
+                                            date_columns=['date_joined'],
+                                            numeric_columns=['age', 'salary'])
+            
+            print(f"\n{Colors.BLUE}Reference Solution:{Colors.RESET}")
+            print(f"  Cleaned shape: {ref_cleaned.shape}")
+            
+            # Compare shapes
+            if 'cleaned' in locals():
+                if cleaned.shape == ref_cleaned.shape:
+                    print(f"{Colors.GREEN}✓ Shape matches reference{Colors.RESET}")
+                    passed += 1
+                else:
+                    print(f"{Colors.YELLOW}⚠ Shape differs (student: {cleaned.shape}, ref: {ref_cleaned.shape}){Colors.RESET}")
+                    failed += 1
+        
+        except Exception as e:
+            print(f"{Colors.RED}  Reference solution: ERROR - {str(e)}{Colors.RESET}")
+        
+        print(f"\n{Colors.BOLD}Summary:{Colors.RESET}")
+        print(f"{Colors.GREEN}Passed: {passed}{Colors.RESET}")
+        print(f"{Colors.RED}Failed: {failed}{Colors.RESET}")
+        return passed, failed
+        
+    except Exception as e:
+        print(f"{Colors.RED}Error loading modules: {str(e)}{Colors.RESET}")
+        traceback.print_exc()
+        return 0, 1
+
+
+def test_exercise_6():
+    """Test Exercise 6: Advanced Feature Engineering with Pandas and Scikit-learn"""
+    print(f"\n{Colors.BOLD}{Colors.CYAN}{'='*60}")
+    print("Exercise 6: Advanced Feature Engineering with Pandas and Scikit-learn")
+    print(f"{'='*60}{Colors.RESET}")
+    
+    try:
+        student_module = load_module('starter_06.py', 'starter_06')
+        solution_module = load_module('solution_06.py', 'solution_06')
+        
+        # Create sample data
+        np.random.seed(42)
+        data = pd.DataFrame({
+            'transaction_date': pd.date_range('2020-01-01', periods=100, freq='D'),
+            'customer_id': np.random.randint(1, 10, 100),
+            'product_category': np.random.choice(['A', 'B', 'C'], 100),
+            'amount': np.random.uniform(10, 1000, 100),
+            'quantity': np.random.randint(1, 10, 100)
+        })
+        
+        target = pd.Series(np.random.randint(0, 2, 100))
+        
+        passed = 0
+        failed = 0
+        
+        # Test student implementation
+        try:
+            engineer = student_module.FeatureEngineer(
+                date_columns=['transaction_date'],
+                groupby_columns=['customer_id'],
+                aggregate_columns=['amount'],
+                create_interactions=True
+            )
+            
+            features = engineer.fit_transform(data, target)
+            
+            print(f"\n{Colors.BLUE}Student Solution:{Colors.RESET}")
+            print(f"  Original shape: {data.shape}")
+            print(f"  Engineered shape: {features.shape}")
+            
+            # Validate output
+            if features.shape[1] >= data.shape[1]:
+                print(f"{Colors.GREEN}✓ Features were created{Colors.RESET}")
+                passed += 1
+            else:
+                print(f"{Colors.RED}✗ Features were not created{Colors.RESET}")
+                failed += 1
+            
+            if features.shape[0] == data.shape[0]:
+                print(f"{Colors.GREEN}✓ Row count preserved{Colors.RESET}")
+                passed += 1
+            else:
+                print(f"{Colors.RED}✗ Row count changed{Colors.RESET}")
+                failed += 1
+                
+        except Exception as e:
+            print(f"{Colors.RED}✗ Student solution: ERROR{Colors.RESET}")
+            print(f"  {str(e)}")
+            traceback.print_exc()
+            failed += 2
+        
+        # Test reference solution
+        try:
+            ref_engineer = solution_module.FeatureEngineer(
+                date_columns=['transaction_date'],
+                groupby_columns=['customer_id'],
+                aggregate_columns=['amount'],
+                create_interactions=True
+            )
+            
+            ref_features = ref_engineer.fit_transform(data, target)
+            
+            print(f"\n{Colors.BLUE}Reference Solution:{Colors.RESET}")
+            print(f"  Engineered shape: {ref_features.shape}")
+            
+            # Compare feature counts
+            if 'features' in locals():
+                if features.shape[1] >= ref_features.shape[1] * 0.8:  # Allow some variance
+                    print(f"{Colors.GREEN}✓ Feature count is reasonable{Colors.RESET}")
+                    passed += 1
+                else:
+                    print(f"{Colors.YELLOW}⚠ Feature count differs significantly{Colors.RESET}")
+                    failed += 1
+        
+        except Exception as e:
+            print(f"{Colors.RED}  Reference solution: ERROR - {str(e)}{Colors.RESET}")
+        
+        print(f"\n{Colors.BOLD}Summary:{Colors.RESET}")
+        print(f"{Colors.GREEN}Passed: {passed}{Colors.RESET}")
+        print(f"{Colors.RED}Failed: {failed}{Colors.RESET}")
+        return passed, failed
+        
+    except Exception as e:
+        print(f"{Colors.RED}Error loading modules: {str(e)}{Colors.RESET}")
+        traceback.print_exc()
+        return 0, 1
+
+
+def test_exercise_7():
+    """Test Exercise 7: Model Training Pipeline with Scikit-learn"""
+    print(f"\n{Colors.BOLD}{Colors.CYAN}{'='*60}")
+    print("Exercise 7: Model Training Pipeline with Scikit-learn")
+    print(f"{'='*60}{Colors.RESET}")
+    
+    try:
+        student_module = load_module('starter_07.py', 'starter_07')
+        solution_module = load_module('solution_07.py', 'solution_07')
+        
+        from sklearn.datasets import make_classification
+        
+        X, y = make_classification(n_samples=500, n_features=10, 
+                                   n_informative=5, random_state=42)
+        X = pd.DataFrame(X, columns=[f'feature_{i}' for i in range(10)])
+        
+        passed = 0
+        failed = 0
+        
+        # Test student implementation
+        try:
+            trainer = student_module.ModelTrainer(
+                task_type='classification',
+                model_type='random_forest',
+                model_params={'n_estimators': 50, 'random_state': 42}
+            )
+            
+            results = trainer.train(X, pd.Series(y))
+            
+            print(f"\n{Colors.BLUE}Student Solution:{Colors.RESET}")
+            print(f"  Results keys: {list(results.keys()) if results else 'None'}")
+            
+            # Validate
+            if results and 'test_metrics' in results:
+                test_metrics = results['test_metrics']
+                if 'accuracy' in test_metrics and 0 <= test_metrics['accuracy'] <= 1:
+                    print(f"{Colors.GREEN}✓ Test metrics are valid{Colors.RESET}")
+                    passed += 1
+                else:
+                    print(f"{Colors.RED}✗ Test metrics are invalid{Colors.RESET}")
+                    failed += 1
+            else:
+                print(f"{Colors.RED}✗ Results structure is incorrect{Colors.RESET}")
+                failed += 1
+            
+            if trainer.pipeline is not None:
+                print(f"{Colors.GREEN}✓ Pipeline was created{Colors.RESET}")
+                passed += 1
+            else:
+                print(f"{Colors.RED}✗ Pipeline was not created{Colors.RESET}")
+                failed += 1
+                
+        except Exception as e:
+            print(f"{Colors.RED}✗ Student solution: ERROR{Colors.RESET}")
+            print(f"  {str(e)}")
+            traceback.print_exc()
+            failed += 2
+        
+        # Test reference solution
+        try:
+            ref_trainer = solution_module.ModelTrainer(
+                task_type='classification',
+                model_type='random_forest',
+                model_params={'n_estimators': 50, 'random_state': 42}
+            )
+            
+            ref_results = ref_trainer.train(X, pd.Series(y))
+            
+            print(f"\n{Colors.BLUE}Reference Solution:{Colors.RESET}")
+            print(f"  Test accuracy: {ref_results['test_metrics']['accuracy']:.4f}")
+            
+            # Compare accuracy if available
+            if 'results' in locals() and 'test_metrics' in results:
+                accuracy_diff = abs(results['test_metrics']['accuracy'] - ref_results['test_metrics']['accuracy'])
+                if accuracy_diff < 0.15:  # Allow some variance
+                    print(f"{Colors.GREEN}✓ Accuracy is close to reference (diff: {accuracy_diff:.4f}){Colors.RESET}")
+                    passed += 1
+                else:
+                    print(f"{Colors.YELLOW}⚠ Accuracy differs significantly (diff: {accuracy_diff:.4f}){Colors.RESET}")
+                    failed += 1
+        
+        except Exception as e:
+            print(f"{Colors.RED}  Reference solution: ERROR - {str(e)}{Colors.RESET}")
+        
+        print(f"\n{Colors.BOLD}Summary:{Colors.RESET}")
+        print(f"{Colors.GREEN}Passed: {passed}{Colors.RESET}")
+        print(f"{Colors.RED}Failed: {failed}{Colors.RESET}")
+        return passed, failed
+        
+    except Exception as e:
+        print(f"{Colors.RED}Error loading modules: {str(e)}{Colors.RESET}")
+        traceback.print_exc()
+        return 0, 1
+
+
+def test_exercise_8():
+    """Test Exercise 8: Cross-validation and Hyperparameter Tuning"""
+    print(f"\n{Colors.BOLD}{Colors.CYAN}{'='*60}")
+    print("Exercise 8: Cross-validation and Hyperparameter Tuning")
+    print(f"{'='*60}{Colors.RESET}")
+    
+    try:
+        student_module = load_module('starter_08.py', 'starter_08')
+        solution_module = load_module('solution_08.py', 'solution_08')
+        
+        from sklearn.datasets import make_classification
+        
+        X, y = make_classification(n_samples=200, n_features=10, 
+                                   n_informative=5, random_state=42)
+        X = pd.DataFrame(X, columns=[f'feature_{i}' for i in range(10)])
+        
+        passed = 0
+        failed = 0
+        
+        # Test student implementation
+        try:
+            tuner = student_module.HyperparameterTuner(
+                task_type='classification',
+                cv_folds=3,  # Reduced for speed
+                random_state=42
+            )
+            
+            param_grid = {
+                'n_estimators': [50, 100],
+                'max_depth': [3, 5]
+            }
+            
+            results = tuner.grid_search(X, pd.Series(y),
+                                       RandomForestClassifier(random_state=42),
+                                       param_grid)
+            
+            print(f"\n{Colors.BLUE}Student Solution:{Colors.RESET}")
+            print(f"  Results keys: {list(results.keys()) if results else 'None'}")
+            
+            # Validate
+            if results and 'best_params' in results:
+                print(f"{Colors.GREEN}✓ Grid search completed{Colors.RESET}")
+                passed += 1
+            else:
+                print(f"{Colors.RED}✗ Grid search failed{Colors.RESET}")
+                failed += 1
+            
+            if results and 'best_score' in results:
+                if 0 <= results['best_score'] <= 1:
+                    print(f"{Colors.GREEN}✓ Best score is valid{Colors.RESET}")
+                    passed += 1
+                else:
+                    print(f"{Colors.RED}✗ Best score is invalid{Colors.RESET}")
+                    failed += 1
+            else:
+                print(f"{Colors.RED}✗ Best score not found{Colors.RESET}")
+                failed += 1
+                
+        except Exception as e:
+            print(f"{Colors.RED}✗ Student solution: ERROR{Colors.RESET}")
+            print(f"  {str(e)}")
+            traceback.print_exc()
+            failed += 3
+        
+        # Test reference solution
+        try:
+            ref_tuner = solution_module.HyperparameterTuner(
+                task_type='classification',
+                cv_folds=3,
+                random_state=42
+            )
+            
+            ref_results = ref_tuner.grid_search(X, pd.Series(y),
+                                               RandomForestClassifier(random_state=42),
+                                               param_grid)
+            
+            print(f"\n{Colors.BLUE}Reference Solution:{Colors.RESET}")
+            print(f"  Best CV score: {ref_results['best_score']:.4f}")
+            
+            # Compare scores if available
+            if 'results' in locals() and 'best_score' in results:
+                score_diff = abs(results['best_score'] - ref_results['best_score'])
+                if score_diff < 0.15:  # Allow some variance
+                    print(f"{Colors.GREEN}✓ CV score is close to reference (diff: {score_diff:.4f}){Colors.RESET}")
+                    passed += 1
+                else:
+                    print(f"{Colors.YELLOW}⚠ CV score differs (diff: {score_diff:.4f}){Colors.RESET}")
+                    failed += 1
+        
+        except Exception as e:
+            print(f"{Colors.RED}  Reference solution: ERROR - {str(e)}{Colors.RESET}")
+        
+        print(f"\n{Colors.BOLD}Summary:{Colors.RESET}")
+        print(f"{Colors.GREEN}Passed: {passed}{Colors.RESET}")
+        print(f"{Colors.RED}Failed: {failed}{Colors.RESET}")
+        return passed, failed
+        
+    except Exception as e:
+        print(f"{Colors.RED}Error loading modules: {str(e)}{Colors.RESET}")
+        traceback.print_exc()
+        return 0, 1
+
+
 def main():
     """Run all tests"""
     print(f"{Colors.BOLD}{Colors.CYAN}")
@@ -457,7 +843,7 @@ def main():
                 idx = sys.argv.index('--exercise') if '--exercise' in sys.argv else sys.argv.index('-e')
                 exercise_num = int(sys.argv[idx + 1])
             except (IndexError, ValueError):
-                print(f"{Colors.RED}Invalid exercise number. Use: python test_all.py --exercise <1-4>{Colors.RESET}")
+                print(f"{Colors.RED}Invalid exercise number. Use: python test_all.py --exercise <1-8>{Colors.RESET}")
                 return
     
     # Run tests
@@ -469,6 +855,10 @@ def main():
         (2, test_exercise_2),
         (3, test_exercise_3),
         (4, test_exercise_4),
+        (5, test_exercise_5),
+        (6, test_exercise_6),
+        (7, test_exercise_7),
+        (8, test_exercise_8),
     ]
     
     if exercise_num:
