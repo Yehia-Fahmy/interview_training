@@ -69,12 +69,23 @@ class DataCleaner:
                 df_cleaned = df_cleaned.ffill()
             case 'backward_fill':
                 df_cleaned = df_cleaned.bfill()
+                # Backward fill may leave NaN at the start, so forward fill to handle those
+                df_cleaned = df_cleaned.ffill()
             case 'mean':
-                df_cleaned[numeric_columns] = df_cleaned[numeric_columns].fillna(df_cleaned[numeric_columns].mean())
+                if numeric_columns:
+                    df_cleaned[numeric_columns] = df_cleaned[numeric_columns].fillna(df_cleaned[numeric_columns].mean())
             case 'median':
-                df_cleaned[numeric_columns] = df_cleaned[numeric_columns].fillna(df_cleaned[numeric_columns].median())
+                if numeric_columns:
+                    df_cleaned[numeric_columns] = df_cleaned[numeric_columns].fillna(df_cleaned[numeric_columns].median())
             case 'mode':
-                df_cleaned[numeric_columns] = df_cleaned[numeric_columns].fillna(df_cleaned[numeric_columns].mode()[0])
+                if numeric_columns:
+                    for col in numeric_columns:
+                        mode_values = df_cleaned[col].mode()
+                        if len(mode_values) > 0:
+                            df_cleaned[col] = df_cleaned[col].fillna(mode_values[0])
+                        else:
+                            # If no mode exists, use mean as fallback
+                            df_cleaned[col] = df_cleaned[col].fillna(df_cleaned[col].mean())
 
         # 3. Remove duplicates if enabled
         if self.handle_duplicates:
