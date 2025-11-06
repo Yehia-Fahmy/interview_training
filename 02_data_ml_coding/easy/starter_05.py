@@ -57,11 +57,48 @@ class DataCleaner:
         
         # TODO: Implement cleaning steps
         # 1. Normalize missing value representations (None, 'N/A', '', etc. -> NaN)
+        df_cleaned = df_cleaned.replace([None, "N/A", "", " "], np.nan)
         # 2. Handle missing values according to strategy
+        if numeric_columns:
+            for col in numeric_columns:
+                df_cleaned[col] = pd.to_numeric(df_cleaned[col], errors='coerce')
+        match self.handle_missing:
+            case 'drop':
+                df_cleaned = df_cleaned.dropna()
+            case 'forward_fill':
+                df_cleaned = df_cleaned.ffill()
+            case 'backward_fill':
+                df_cleaned = df_cleaned.bfill()
+            case 'mean':
+                df_cleaned[numeric_columns] = df_cleaned[numeric_columns].fillna(df_cleaned[numeric_columns].mean())
+            case 'median':
+                df_cleaned[numeric_columns] = df_cleaned[numeric_columns].fillna(df_cleaned[numeric_columns].median())
+            case 'mode':
+                df_cleaned[numeric_columns] = df_cleaned[numeric_columns].fillna(df_cleaned[numeric_columns].mode()[0])
+
         # 3. Remove duplicates if enabled
+        if self.handle_duplicates:
+            df_cleaned = df_cleaned.drop_duplicates()
         # 4. Fix data types (dates, numeric)
+        if date_columns:
+            for col in date_columns:
+                df_cleaned[col] = pd.to_datetime(df_cleaned[col], errors='coerce')
         # 5. Detect and handle outliers (IQR method for numeric columns)
+        if self.detect_outliers and numeric_columns:
+            for col in numeric_columns:
+                Q1 = df_cleaned[col].quantile(0.25)
+                Q3 = df_cleaned[col].quantile(0.75)
+                IQR = Q3 - Q1
+                lb = Q1 - 1.5 * IQR
+                ub = Q3 + 1.5 * IQR
+
+                df_cleaned = df_cleaned[(df_cleaned[col] >= lb) & (df_cleaned[col] <= ub)]
         # 6. Normalize strings (lowercase, strip whitespace)
+        if self.normalize_strings:
+            string_columns = df_cleaned.select_dtypes(include=['object']).columns
+            for col in string_columns:
+                mask = df_cleaned[col].notna()
+                df_cleaned.loc[mask, col] = df_cleaned.loc[mask, col].str.lower().str.strip()
         
         self.report['final_shape'] = df_cleaned.shape
         return df_cleaned
