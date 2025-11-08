@@ -1,183 +1,289 @@
 """
-Exercise 1: Model Versioning and Registry
+Exercise 1: Feature Engineering & Selection Pipeline
 
-Build a simple model registry system that can:
-1. Store and version models
-2. Track metadata (metrics, training date, features)
-3. Promote models (dev → staging → production)
-4. Rollback to previous versions
+Build a comprehensive feature engineering and selection pipeline for classification.
+Handle missing values, create derived features, encode categoricals, and select important features.
 """
 
-import pickle
-import json
-from datetime import datetime
-from pathlib import Path
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass, asdict
-from enum import Enum
+import numpy as np
+import pandas as pd
+from typing import Dict, List, Optional, Tuple, Any, Callable
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.feature_selection import (
+    mutual_info_classif,
+    f_classif,
+    SelectKBest,
+    RFE
+)
+from sklearn.ensemble import RandomForestClassifier
+import warnings
+warnings.filterwarnings('ignore')
 
 
-class ModelStage(Enum):
-    DEV = "dev"
-    STAGING = "staging"
-    PRODUCTION = "production"
-
-
-@dataclass
-class ModelMetadata:
-    """Model metadata container"""
-    version: str
-    stage: ModelStage
-    trained_at: datetime
-    metrics: Dict[str, float]
-    features: List[str]
-    model_type: str
-    hyperparameters: Dict[str, Any]
-    path: Optional[str] = None
-    
-    def to_dict(self):
-        """Convert to dictionary for serialization"""
-        # TODO: Implement serialization
-        # Convert ModelStage enum to string value
-        # Convert datetime to ISO format string
-        pass
-    
-    @classmethod
-    def from_dict(cls, data: Dict):
-        """Create from dictionary"""
-        # TODO: Implement deserialization
-        # Convert string back to ModelStage enum
-        # Convert ISO string back to datetime
-        pass
-
-
-class ModelRegistry:
+class FeatureEngineeringPipeline(BaseEstimator, TransformerMixin):
     """
-    Model registry for versioning and lifecycle management.
+    Comprehensive feature engineering pipeline.
     
-    Stores models on disk and tracks metadata in JSON.
+    Handles missing values, creates interaction features, encodes categoricals,
+    and scales features. Designed to prevent data leakage and handle unseen data.
     """
     
-    def __init__(self, registry_path: Path = Path("model_registry")):
-        self.registry_path = Path(registry_path)
-        # TODO: Create registry directory if it doesn't exist
-        self.metadata_file = self.registry_path / "metadata.json"
-        self.models: Dict[str, ModelMetadata] = self._load_metadata()
-    
-    def _load_metadata(self) -> Dict[str, ModelMetadata]:
-        """Load existing metadata"""
-        # TODO: Load metadata from JSON file if it exists
-        # Return empty dict if file doesn't exist
-        pass
-    
-    def _save_metadata(self):
-        """Save metadata to disk"""
-        # TODO: Save all metadata to JSON file
-        pass
-    
-    def register_model(self, model: Any, metadata: ModelMetadata) -> str:
+    def __init__(self, 
+                 missing_strategy: Dict[str, str] = None,
+                 create_interactions: bool = True,
+                 interaction_pairs: Optional[List[Tuple[str, str]]] = None,
+                 categorical_encoding: str = 'onehot',  # 'onehot', 'target', 'frequency'
+                 scaling: str = 'standard',  # 'standard', 'minmax', None
+                 handle_unseen: str = 'ignore'):  # 'ignore', 'error', 'most_frequent'
         """
-        Register a new model version.
+        Initialize feature engineering pipeline.
         
         Args:
-            model: The trained model object
-            metadata: Model metadata
+            missing_strategy: Dict mapping feature names to imputation strategy
+                            ('mean', 'median', 'mode', 'forward_fill', 'constant')
+            create_interactions: Whether to create interaction features
+            interaction_pairs: Specific pairs of features to create interactions for
+            categorical_encoding: Method for encoding categorical features
+            scaling: Scaling method for numeric features
+            handle_unseen: How to handle unseen categories in test data
+        """
+        self.missing_strategy = missing_strategy or {}
+        self.create_interactions = create_interactions
+        self.interaction_pairs = interaction_pairs
+        self.categorical_encoding = categorical_encoding
+        self.scaling = scaling
+        self.handle_unseen = handle_unseen
+        
+        # Store learned parameters during fit
+        self.imputation_values_ = {}
+        self.categorical_encoders_ = {}
+        self.scaler_ = None
+        self.feature_names_ = []
+        self.numeric_features_ = []
+        self.categorical_features_ = []
+        
+    def fit(self, X: pd.DataFrame, y: Optional[pd.Series] = None):
+        """
+        Fit the pipeline on training data.
+        
+        Args:
+            X: Training features
+            y: Training target (optional, needed for target encoding)
         
         Returns:
-            Version string
+            self
         """
-        # TODO: Implement model registration
-        # 1. Save model to disk as pickle file
-        # 2. Update metadata with model path
-        # 3. Store metadata in self.models dict
-        # 4. Save metadata to disk
-        # 5. Return version string
-        pass
+        # TODO: Implement pipeline fitting
+        # 1. Identify numeric vs categorical features
+        # 2. Learn imputation values for missing data
+        # 3. Fit encoders for categorical features (if target encoding, need y)
+        # 4. Fit scaler if needed
+        # 5. Store feature names and transformations
+        
+        return self
     
-    def get_model(self, version: Optional[str] = None, 
-                  stage: Optional[ModelStage] = None) -> tuple:
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """
-        Retrieve model and metadata.
+        Transform data using learned parameters.
         
         Args:
-            version: Specific version to retrieve
-            stage: Retrieve current model in stage (dev/staging/production)
+            X: Data to transform
         
         Returns:
-            (model, metadata) tuple
+            Transformed DataFrame
         """
-        # TODO: Implement model retrieval
-        # If version provided, get that version
-        # If stage provided, find latest model in that stage
-        # Load model from disk using pickle
-        # Return (model, metadata) tuple
+        # TODO: Implement transformation
+        # 1. Handle missing values using learned strategies
+        # 2. Create interaction features
+        # 3. Encode categorical features (handle unseen categories!)
+        # 4. Scale numeric features
+        # 5. Ensure consistent feature order
+        
         pass
     
-    def promote_model(self, version: str, target_stage: ModelStage):
-        """
-        Promote model to target stage.
-        
-        Args:
-            version: Model version to promote
-            target_stage: Target stage (dev/staging/production)
-        """
-        # TODO: Implement model promotion
-        # 1. Find model by version
-        # 2. Update its stage to target_stage
-        # 3. (Optional) Demote previous model in that stage
-        # 4. Save updated metadata
+    def _identify_feature_types(self, X: pd.DataFrame):
+        """Identify numeric and categorical features"""
+        # TODO: Implement feature type identification
+        # Numeric: int64, float64
+        # Categorical: object, category, or low-cardinality numeric features
         pass
     
-    def list_models(self, stage: Optional[ModelStage] = None,
-                   min_metric: Optional[Dict[str, float]] = None) -> List[ModelMetadata]:
+    def _handle_missing_values(self, X: pd.DataFrame, is_fit: bool = False) -> pd.DataFrame:
+        """Handle missing values according to strategy"""
+        # TODO: Implement missing value handling
+        # For each feature:
+        #   - If strategy specified, use it
+        #   - If numeric and no strategy: use median
+        #   - If categorical and no strategy: use mode
+        #   - Store learned values during fit
+        #   - Use stored values during transform
+        pass
+    
+    def _create_interaction_features(self, X: pd.DataFrame) -> pd.DataFrame:
+        """Create interaction features"""
+        # TODO: Implement interaction feature creation
+        # If interaction_pairs specified, create interactions for those pairs
+        # Otherwise, create interactions for all numeric feature pairs (be careful of explosion!)
+        # Consider: product, ratio, difference, sum
+        # Only create interactions that make sense (e.g., ratio where denominator != 0)
+        pass
+    
+    def _encode_categoricals(self, X: pd.DataFrame, y: Optional[pd.Series] = None, 
+                            is_fit: bool = False) -> pd.DataFrame:
+        """Encode categorical features"""
+        # TODO: Implement categorical encoding
+        # One-hot encoding: Create binary columns for each category
+        # Target encoding: Encode by mean target value per category (need y during fit!)
+        # Frequency encoding: Encode by frequency of category
+        # Handle unseen categories appropriately
+        pass
+    
+    def _scale_features(self, X: pd.DataFrame, is_fit: bool = False) -> pd.DataFrame:
+        """Scale numeric features"""
+        # TODO: Implement feature scaling
+        # Standard scaling: (x - mean) / std
+        # MinMax scaling: (x - min) / (max - min)
+        # Only scale numeric features
+        pass
+
+
+class FeatureSelector(BaseEstimator, TransformerMixin):
+    """
+    Feature selection using multiple methods.
+    
+    Supports correlation-based, mutual information, and recursive feature elimination.
+    """
+    
+    def __init__(self, 
+                 method: str = 'mutual_info',  # 'mutual_info', 'f_test', 'rfe', 'correlation'
+                 k: int = 10,
+                 threshold: Optional[float] = None,
+                 correlation_threshold: float = 0.95):
         """
-        List models matching criteria.
+        Initialize feature selector.
         
         Args:
-            stage: Filter by stage
-            min_metric: Filter by minimum metric values (e.g., {'accuracy': 0.9})
+            method: Selection method to use
+            k: Number of features to select (if threshold not specified)
+            threshold: Minimum importance score threshold
+            correlation_threshold: Threshold for removing highly correlated features
+        """
+        self.method = method
+        self.k = k
+        self.threshold = threshold
+        self.correlation_threshold = correlation_threshold
+        
+        self.selected_features_ = []
+        self.feature_importances_ = {}
+        self.selector_ = None
+    
+    def fit(self, X: pd.DataFrame, y: pd.Series):
+        """
+        Fit feature selector.
+        
+        Args:
+            X: Features
+            y: Target
         
         Returns:
-            List of matching ModelMetadata objects
+            self
         """
-        # TODO: Implement model listing
-        # Filter by stage if provided
-        # Filter by metrics if provided
-        # Return list of matching models
+        # TODO: Implement feature selection fitting
+        # 1. Remove highly correlated features (if method includes this)
+        # 2. Apply selection method (mutual_info, f_test, RFE)
+        # 3. Store selected features and importance scores
+        # 4. Determine k based on threshold if specified
+        
+        return self
+    
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
+        """
+        Select features from data.
+        
+        Args:
+            X: Data to transform
+        
+        Returns:
+            DataFrame with selected features
+        """
+        # TODO: Return only selected features
+        pass
+    
+    def _remove_correlated_features(self, X: pd.DataFrame) -> Tuple[pd.DataFrame, List[str]]:
+        """Remove highly correlated features"""
+        # TODO: Implement correlation-based removal
+        # Calculate correlation matrix
+        # Identify feature pairs above threshold
+        # Remove one feature from each pair (keep the one with higher variance or importance)
+        # Return filtered DataFrame and list of removed features
+        pass
+    
+    def get_feature_importance_ranking(self) -> pd.DataFrame:
+        """Get features ranked by importance"""
+        # TODO: Return DataFrame with features and importance scores, sorted
         pass
 
 
 # Usage example
 if __name__ == "__main__":
-    from sklearn.ensemble import RandomForestClassifier
     from sklearn.datasets import make_classification
+    from sklearn.model_selection import train_test_split
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.metrics import accuracy_score
     
-    # Create registry
-    registry = ModelRegistry()
+    # Create synthetic dataset with missing values and categoricals
+    np.random.seed(42)
+    X, y = make_classification(n_samples=1000, n_features=20, n_informative=10, 
+                              n_redundant=5, random_state=42)
+    X = pd.DataFrame(X, columns=[f'feature_{i}' for i in range(20)])
     
-    # Train a model
-    X, y = make_classification(n_samples=100, n_features=10, random_state=42)
-    model = RandomForestClassifier(random_state=42)
-    model.fit(X, y)
+    # Add some missing values
+    missing_indices = np.random.choice(X.index, size=100, replace=False)
+    X.loc[missing_indices, 'feature_0'] = np.nan
     
-    # Register model
-    metadata = ModelMetadata(
-        version="1.0.0",
-        stage=ModelStage.DEV,
-        trained_at=datetime.now(),
-        metrics={"accuracy": 0.95, "f1": 0.93},
-        features=[f"feature_{i}" for i in range(10)],
-        model_type="RandomForest",
-        hyperparameters={"n_estimators": 100}
+    # Add categorical features
+    X['category'] = np.random.choice(['A', 'B', 'C', 'D'], size=1000)
+    X['category2'] = np.random.choice(['X', 'Y'], size=1000)
+    
+    # Split data
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
     )
     
-    version = registry.register_model(model, metadata)
-    print(f"Registered model version: {version}")
+    # Create and fit pipeline
+    pipeline = FeatureEngineeringPipeline(
+        missing_strategy={'feature_0': 'median'},
+        create_interactions=True,
+        categorical_encoding='onehot',
+        scaling='standard'
+    )
     
-    # Promote to production
-    registry.promote_model(version, ModelStage.PRODUCTION)
+    X_train_transformed = pipeline.fit_transform(X_train, y_train)
+    X_test_transformed = pipeline.transform(X_test)
     
-    # Retrieve production model
-    prod_model, prod_meta = registry.get_model(stage=ModelStage.PRODUCTION)
-    print(f"Production model: {prod_meta.version}")
-
+    print(f"Original features: {X_train.shape[1]}")
+    print(f"Transformed features: {X_train_transformed.shape[1]}")
+    
+    # Feature selection
+    selector = FeatureSelector(method='mutual_info', k=15)
+    X_train_selected = selector.fit_transform(X_train_transformed, y_train)
+    X_test_selected = selector.transform(X_test_transformed)
+    
+    print(f"Selected features: {X_train_selected.shape[1]}")
+    
+    # Train model
+    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    model.fit(X_train_selected, y_train)
+    
+    # Evaluate
+    train_acc = accuracy_score(y_train, model.predict(X_train_selected))
+    test_acc = accuracy_score(y_test, model.predict(X_test_selected))
+    
+    print(f"\nTrain Accuracy: {train_acc:.4f}")
+    print(f"Test Accuracy: {test_acc:.4f}")
+    
+    # Feature importance
+    importance_df = selector.get_feature_importance_ranking()
+    print("\nTop 10 Features:")
+    print(importance_df.head(10))

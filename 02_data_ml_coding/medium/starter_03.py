@@ -1,137 +1,345 @@
 """
-Exercise 3: A/B Testing Framework for ML Models
+Exercise 3: Time Series Forecasting Pipeline
 
-Build an A/B testing framework for comparing ML models in production.
+Build a time series forecasting pipeline that handles multiple series,
+missing values, feature engineering, and proper evaluation.
 """
 
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Optional, Tuple
-from dataclasses import dataclass
-from scipy import stats
-from datetime import datetime
-import random
+from typing import Dict, List, Optional, Tuple, Any, Callable
+from datetime import datetime, timedelta
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.preprocessing import StandardScaler
+import warnings
+warnings.filterwarnings('ignore')
+
+try:
+    from statsmodels.tsa.arima.model import ARIMA
+    from statsmodels.tsa.holtwinters import ExponentialSmoothing
+    STATSMODELS_AVAILABLE = True
+except ImportError:
+    STATSMODELS_AVAILABLE = False
+    print("Warning: statsmodels not available. ARIMA and Exponential Smoothing will be limited.")
 
 
-@dataclass
-class ExperimentConfig:
-    """A/B test configuration"""
-    variant_a_name: str = "control"
-    variant_b_name: str = "treatment"
-    traffic_split: float = 0.5  # 50/50 split
-    minimum_sample_size: int = 1000
-    significance_level: float = 0.05
-    primary_metric: str = "accuracy"
-
-
-@dataclass
-class ExperimentResult:
-    """Results of A/B test"""
-    variant_a_metrics: Dict[str, List[float]]
-    variant_b_metrics: Dict[str, List[float]]
-    sample_size_a: int
-    sample_size_b: int
-    significance_tests: Dict[str, Dict]
-    recommendation: str
-    conclusion: str
-
-
-class ABTestFramework:
+class TimeSeriesPreprocessor(BaseEstimator, TransformerMixin):
     """
-    A/B testing framework for ML models.
+    Preprocessor for time series data.
     
-    Manages traffic splitting, metric collection, and statistical analysis.
+    Handles missing values, outliers, and creates time-based features.
     """
     
-    def __init__(self, config: ExperimentConfig):
-        self.config = config
-        self.variant_a_results = []
-        self.variant_b_results = []
-        self.variant_a_metrics = {self.config.primary_metric: []}
-        self.variant_b_metrics = {self.config.primary_metric: []}
-    
-    def assign_variant(self) -> str:
+    def __init__(self,
+                 handle_missing: str = 'interpolate',  # 'interpolate', 'forward_fill', 'backward_fill', 'mean'
+                 handle_outliers: bool = True,
+                 outlier_method: str = 'iqr',  # 'iqr', 'zscore'
+                 create_time_features: bool = True,
+                 create_lag_features: bool = True,
+                 lag_periods: List[int] = None,
+                 create_rolling_features: bool = True,
+                 rolling_windows: List[int] = None):
         """
-        Assign request to variant A or B based on traffic split.
-        
-        Returns:
-            'A' or 'B'
-        """
-        # TODO: Implement variant assignment
-        # Use random.random() and traffic_split to assign
-        pass
-    
-    def record_result(self, variant: str, metrics: Dict[str, float]):
-        """Record results for a variant"""
-        # TODO: Implement result recording
-        # Store metrics in appropriate variant's metrics dict
-        pass
-    
-    def calculate_sample_size(self, effect_size: float, power: float = 0.8) -> int:
-        """
-        Calculate minimum sample size needed.
+        Initialize preprocessor.
         
         Args:
-            effect_size: Minimum detectable effect size (e.g., 0.05 for 5% improvement)
-            power: Statistical power (1 - probability of Type II error)
+            handle_missing: Method for handling missing values
+            handle_outliers: Whether to detect and handle outliers
+            outlier_method: Method for outlier detection
+            create_time_features: Whether to create time-based features
+            create_lag_features: Whether to create lag features
+            lag_periods: List of lag periods (e.g., [1, 7, 30])
+            create_rolling_features: Whether to create rolling statistics
+            rolling_windows: List of window sizes for rolling features
+        """
+        self.handle_missing = handle_missing
+        self.handle_outliers = handle_outliers
+        self.outlier_method = outlier_method
+        self.create_time_features = create_time_features
+        self.create_lag_features = create_lag_features
+        self.lag_periods = lag_periods or [1, 7, 30]
+        self.create_rolling_features = create_rolling_features
+        self.rolling_windows = rolling_windows or [7, 30]
+        
+        self.outlier_thresholds_ = {}
+        self.feature_names_ = []
+    
+    def fit(self, X: pd.DataFrame, y: Optional[pd.Series] = None):
+        """
+        Fit preprocessor on training data.
+        
+        Args:
+            X: Time series data with datetime index
+            y: Target series (optional)
         
         Returns:
-            Minimum sample size per variant
+            self
         """
-        # TODO: Implement sample size calculation
-        # Use power analysis (can use statsmodels.stats.power for this)
-        # For now, return a simple approximation
-        pass
+        # TODO: Implement fitting
+        # 1. Learn outlier thresholds if handling outliers
+        # 2. Store feature names
+        # Note: Most preprocessing is stateless, but outlier detection needs thresholds
+        
+        return self
     
-    def analyze_results(self) -> ExperimentResult:
+    def transform(self, X: pd.DataFrame) -> pd.DataFrame:
         """
-        Perform statistical analysis and determine winner.
+        Transform time series data.
+        
+        Args:
+            X: Time series data with datetime index
         
         Returns:
-            ExperimentResult with analysis and recommendation
+            Transformed DataFrame with engineered features
         """
-        # TODO: Implement result analysis
-        # Check if we have enough samples
-        # Perform statistical tests (t-test, Mann-Whitney)
-        # Determine winner based on significance and improvement
-        # Return ExperimentResult
+        # TODO: Implement transformation
+        # 1. Handle missing values
+        # 2. Handle outliers
+        # 3. Create time-based features (day of week, month, etc.)
+        # 4. Create lag features
+        # 5. Create rolling statistics
+        
         pass
     
-    def generate_report(self, result: ExperimentResult) -> str:
-        """Generate human-readable report"""
-        # TODO: Implement report generation
-        # Include metrics, statistical tests, recommendation
+    def _handle_missing_values(self, X: pd.DataFrame) -> pd.DataFrame:
+        """Handle missing values"""
+        # TODO: Implement missing value handling
+        # Interpolate: Use linear interpolation
+        # Forward fill: Fill with previous value
+        # Backward fill: Fill with next value
+        # Mean: Fill with mean value
+        pass
+    
+    def _handle_outliers(self, X: pd.DataFrame) -> pd.DataFrame:
+        """Detect and handle outliers"""
+        # TODO: Implement outlier handling
+        # IQR method: Values outside Q1 - 1.5*IQR or Q3 + 1.5*IQR
+        # Z-score method: Values with |z-score| > 3
+        # Replace outliers with threshold values or NaN (then interpolate)
+        pass
+    
+    def _create_time_features(self, X: pd.DataFrame) -> pd.DataFrame:
+        """Create time-based features"""
+        # TODO: Create time features from datetime index
+        # day_of_week, day_of_month, month, quarter, year
+        # is_weekend, is_month_start, is_month_end
+        # Consider cyclical encoding (sin/cos) for periodic features
+        pass
+    
+    def _create_lag_features(self, X: pd.DataFrame, target_col: Optional[str] = None) -> pd.DataFrame:
+        """Create lag features"""
+        # TODO: Create lag features
+        # For each lag period, create shifted version
+        # Handle NaN values at the beginning appropriately
+        pass
+    
+    def _create_rolling_features(self, X: pd.DataFrame, target_col: Optional[str] = None) -> pd.DataFrame:
+        """Create rolling window statistics"""
+        # TODO: Create rolling statistics
+        # For each window size: mean, std, min, max
+        # Consider exponential weighted moving averages
+        pass
+
+
+class TimeSeriesForecaster:
+    """
+    Time series forecasting with multiple methods.
+    
+    Supports ARIMA, Exponential Smoothing, and ML-based forecasting.
+    """
+    
+    def __init__(self, 
+                 method: str = 'arima',  # 'arima', 'exponential_smoothing', 'ml'
+                 model_params: Optional[Dict] = None,
+                 forecast_horizon: int = 1):
+        """
+        Initialize forecaster.
+        
+        Args:
+            method: Forecasting method
+            model_params: Parameters for the forecasting model
+            forecast_horizon: Number of steps ahead to forecast
+        """
+        self.method = method
+        self.model_params = model_params or {}
+        self.forecast_horizon = forecast_horizon
+        
+        self.model_ = None
+        self.fitted_ = False
+    
+    def fit(self, y: pd.Series):
+        """
+        Fit forecasting model.
+        
+        Args:
+            y: Time series to fit (with datetime index)
+        
+        Returns:
+            self
+        """
+        # TODO: Implement model fitting
+        # ARIMA: Fit ARIMA model (need to determine order)
+        # Exponential Smoothing: Fit ETS model
+        # ML: This would require feature engineering first (use preprocessor)
+        pass
+    
+    def predict(self, n_periods: Optional[int] = None) -> Tuple[np.ndarray, np.ndarray]:
+        """
+        Generate forecasts.
+        
+        Args:
+            n_periods: Number of periods to forecast (defaults to forecast_horizon)
+        
+        Returns:
+            (forecasts, confidence_intervals) tuple
+        """
+        # TODO: Generate forecasts
+        # Return point forecasts and confidence intervals if available
+        pass
+    
+    def _fit_arima(self, y: pd.Series):
+        """Fit ARIMA model"""
+        # TODO: Implement ARIMA fitting
+        # Auto-select order or use provided order
+        # Handle non-stationarity (differencing)
+        pass
+    
+    def _fit_exponential_smoothing(self, y: pd.Series):
+        """Fit Exponential Smoothing model"""
+        # TODO: Implement ETS fitting
+        # Detect trend and seasonality
+        pass
+
+
+class TimeSeriesEvaluator:
+    """
+    Evaluator for time series forecasting with time-aware cross-validation.
+    """
+    
+    def __init__(self, 
+                 cv_method: str = 'walk_forward',  # 'walk_forward', 'expanding_window'
+                 n_splits: int = 5,
+                 test_size: Optional[int] = None):
+        """
+        Initialize evaluator.
+        
+        Args:
+            cv_method: Cross-validation method
+            n_splits: Number of CV splits
+            test_size: Size of test set in each split
+        """
+        self.cv_method = cv_method
+        self.n_splits = n_splits
+        self.test_size = test_size
+    
+    def time_series_cv_split(self, y: pd.Series) -> List[Tuple[np.ndarray, np.ndarray]]:
+        """
+        Generate time-aware cross-validation splits.
+        
+        Args:
+            y: Time series data
+        
+        Returns:
+            List of (train_indices, test_indices) tuples
+        """
+        # TODO: Implement time-aware CV
+        # Walk-forward: Fixed train size, moving test window
+        # Expanding window: Growing train size, moving test window
+        # CRITICAL: Never use future data to predict past!
+        pass
+    
+    def evaluate(self, y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
+        """
+        Compute evaluation metrics.
+        
+        Args:
+            y_true: True values
+            y_pred: Predicted values
+        
+        Returns:
+            Dictionary of metrics
+        """
+        # TODO: Compute time series metrics
+        # MAE, RMSE, MAPE, MASE (Mean Absolute Scaled Error)
+        # Handle division by zero in MAPE
+        pass
+    
+    def cross_validate(self, forecaster: TimeSeriesForecaster, 
+                      y: pd.Series) -> Dict[str, List[float]]:
+        """
+        Perform time-aware cross-validation.
+        
+        Args:
+            forecaster: Fitted forecaster
+            y: Time series data
+        
+        Returns:
+            Dictionary of metrics across CV folds
+        """
+        # TODO: Implement cross-validation
+        # Split data using time_series_cv_split
+        # Train and evaluate on each fold
+        # Return metrics for each fold
         pass
 
 
 # Usage example
 if __name__ == "__main__":
-    config = ExperimentConfig(
-        variant_a_name="current_model",
-        variant_b_name="improved_model",
-        traffic_split=0.5,
-        minimum_sample_size=1000,
-        primary_metric="accuracy"
+    # Create synthetic time series data
+    np.random.seed(42)
+    dates = pd.date_range(start='2020-01-01', end='2023-12-31', freq='D')
+    
+    # Create series with trend and seasonality
+    trend = np.linspace(100, 150, len(dates))
+    seasonal = 10 * np.sin(2 * np.pi * np.arange(len(dates)) / 365.25)
+    noise = np.random.normal(0, 5, len(dates))
+    values = trend + seasonal + noise
+    
+    ts_data = pd.Series(values, index=dates, name='value')
+    
+    # Add some missing values
+    missing_indices = np.random.choice(ts_data.index, size=50, replace=False)
+    ts_data.loc[missing_indices] = np.nan
+    
+    print(f"Time series length: {len(ts_data)}")
+    print(f"Missing values: {ts_data.isna().sum()}")
+    
+    # Preprocess
+    preprocessor = TimeSeriesPreprocessor(
+        handle_missing='interpolate',
+        handle_outliers=True,
+        create_time_features=True,
+        create_lag_features=True,
+        lag_periods=[1, 7, 30],
+        create_rolling_features=True,
+        rolling_windows=[7, 30]
     )
     
-    framework = ABTestFramework(config)
+    # Convert to DataFrame for preprocessing
+    ts_df = pd.DataFrame({'value': ts_data})
+    ts_df_transformed = preprocessor.fit_transform(ts_df)
     
-    # Simulate experiment
-    np.random.seed(42)
-    for i in range(2000):
-        variant = framework.assign_variant()
-        
-        if variant == 'A':
-            # Simulate current model (lower performance)
-            metrics = {'accuracy': np.random.normal(0.85, 0.02)}
-        else:
-            # Simulate improved model (higher performance)
-            metrics = {'accuracy': np.random.normal(0.87, 0.02)}
-        
-        framework.record_result(variant, metrics)
+    print(f"\nOriginal features: {ts_df.shape[1]}")
+    print(f"Transformed features: {ts_df_transformed.shape[1]}")
     
-    # Analyze
-    result = framework.analyze_results()
-    print(f"Recommendation: {result.recommendation}")
-    print(f"Conclusion: {result.conclusion}")
-
+    # Split into train/test (last 20% for testing)
+    split_idx = int(len(ts_data) * 0.8)
+    train_data = ts_data[:split_idx]
+    test_data = ts_data[split_idx:]
+    
+    # Forecast
+    if STATSMODELS_AVAILABLE:
+        forecaster = TimeSeriesForecaster(method='arima', forecast_horizon=len(test_data))
+        forecaster.fit(train_data)
+        forecasts, conf_intervals = forecaster.predict(n_periods=len(test_data))
+        
+        # Evaluate
+        evaluator = TimeSeriesEvaluator()
+        metrics = evaluator.evaluate(test_data.values, forecasts)
+        
+        print("\n=== Forecasting Results ===")
+        print(f"MAE: {metrics.get('mae', 0):.4f}")
+        print(f"RMSE: {metrics.get('rmse', 0):.4f}")
+        print(f"MAPE: {metrics.get('mape', 0):.4f}%")
+    else:
+        print("\nStatsmodels not available. Install with: pip install statsmodels")
