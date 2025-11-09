@@ -13,10 +13,19 @@ All exercises are documented in **[EXERCISES.md](EXERCISES.md)**:
 
 ## Getting Started
 
-1. Read **[EXERCISES.md](EXERCISES.md)** for detailed problem descriptions and requirements
-2. Start with `starter_01.py` and work through each exercise
-3. Run `python test_all.py` to test your implementations
-4. Review the solutions in `solution_*.py` files after attempting each exercise
+1. **Set up your environment**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+   See **[SETUP.md](SETUP.md)** for detailed setup instructions.
+
+2. Read **[EXERCISES.md](EXERCISES.md)** for detailed problem descriptions and requirements
+
+3. Start with `starter_01.py` and work through each exercise
+
+4. Run `python test_all.py` to test your implementations
+
+5. Review the solutions in `solution_*.py` files after attempting each exercise
 
 ## Key Focus Areas
 
