@@ -92,53 +92,134 @@ class TimeSeriesPreprocessor(BaseEstimator, TransformerMixin):
         Returns:
             Transformed DataFrame with engineered features
         """
-        # TODO: Implement transformation
-        # 1. Handle missing values
-        # 2. Handle outliers
-        # 3. Create time-based features (day of week, month, etc.)
-        # 4. Create lag features
-        # 5. Create rolling statistics
+        X = X.copy()
         
-        pass
+        # 1. Handle missing values (initial cleanup)
+        X = self._handle_missing_values(X)
+        
+        # 2. Handle outliers
+        if self.handle_outliers:
+            X = self._handle_outliers(X)
+        
+        # 3. Create time-based features (day of week, month, etc.)
+        if self.create_time_features:
+            X = self._create_time_features(X)
+        
+        # 4. Create lag features (creates NaNs at beginning)
+        if self.create_lag_features:
+            X = self._create_lag_features(X)
+        
+        # 5. Create rolling statistics (may have NaNs at beginning)
+        if self.create_rolling_features:
+            X = self._create_rolling_features(X)
+        
+        # 6. Handle missing values again (after lag/rolling features create NaNs)
+        X = self._handle_missing_values(X)
+        
+        return X
     
     def _handle_missing_values(self, X: pd.DataFrame) -> pd.DataFrame:
         """Handle missing values"""
-        # TODO: Implement missing value handling
-        # Interpolate: Use linear interpolation
-        # Forward fill: Fill with previous value
-        # Backward fill: Fill with next value
-        # Mean: Fill with mean value
-        pass
+        X = X.copy()
+        
+        if self.handle_missing == 'interpolate':
+            X = X.interpolate(method='linear')
+        elif self.handle_missing == 'forward_fill':
+            X = X.ffill()
+        elif self.handle_missing == 'backward_fill':
+            X = X.bfill()
+        elif self.handle_missing == 'mean':
+            X = X.fillna(X.mean())
+        
+        return X
     
     def _handle_outliers(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Detect and handle outliers"""
-        # TODO: Implement outlier handling
-        # IQR method: Values outside Q1 - 1.5*IQR or Q3 + 1.5*IQR
-        # Z-score method: Values with |z-score| > 3
-        # Replace outliers with threshold values or NaN (then interpolate)
-        pass
+        """Detect and handle outliers"""        
+        X = X.copy()
+        
+        for col in X.select_dtypes(include=[np.number]).columns:
+            if self.outlier_method == 'iqr':
+                Q1 = X[col].quantile(0.25)
+                Q3 = X[col].quantile(0.75)
+                IQR = Q3 - Q1
+                lower_bound = Q1 - 1.5 * IQR
+                upper_bound = Q3 + 1.5 * IQR
+                X[col] = X[col].clip(lower=lower_bound, upper=upper_bound)
+            elif self.outlier_method == 'zscore':
+                mean = X[col].mean()
+                std = X[col].std()
+                if std > 0:
+                    lower_bound = mean - 3 * std
+                    upper_bound = mean + 3 * std
+                    X[col] = X[col].clip(lower=lower_bound, upper=upper_bound)
+        
+        return X
     
     def _create_time_features(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Create time-based features"""
-        # TODO: Create time features from datetime index
-        # day_of_week, day_of_month, month, quarter, year
-        # is_weekend, is_month_start, is_month_end
-        # Consider cyclical encoding (sin/cos) for periodic features
-        pass
+        """Create time-based features"""        
+        X = X.copy()
+        index = X.index
+        
+        if not isinstance(index, pd.DatetimeIndex):
+            return X
+        
+        X['day_of_week'] = index.dayofweek
+        X['day_of_month'] = index.day
+        X['month'] = index.month
+        X['quarter'] = index.quarter
+        X['year'] = index.year
+        X['is_weekend'] = (index.dayofweek >= 5).astype(int)
+        X['is_month_start'] = index.is_month_start.astype(int)
+        X['is_month_end'] = index.is_month_end.astype(int)
+        
+        # Cyclical encoding for periodic features
+        X['day_of_week_sin'] = np.sin(2 * np.pi * X['day_of_week'] / 7)
+        X['day_of_week_cos'] = np.cos(2 * np.pi * X['day_of_week'] / 7)
+        X['month_sin'] = np.sin(2 * np.pi * X['month'] / 12)
+        X['month_cos'] = np.cos(2 * np.pi * X['month'] / 12)
+        
+        return X
     
     def _create_lag_features(self, X: pd.DataFrame, target_col: Optional[str] = None) -> pd.DataFrame:
-        """Create lag features"""
-        # TODO: Create lag features
-        # For each lag period, create shifted version
-        # Handle NaN values at the beginning appropriately
-        pass
+        """Create lag features"""        
+        X = X.copy()
+        
+        # Determine which columns to create lags for
+        if target_col and target_col in X.columns:
+            cols_to_lag = [target_col]
+        else:
+            cols_to_lag = X.select_dtypes(include=[np.number]).columns.tolist()
+        
+        # Create lag features for each column and lag period
+        for col in cols_to_lag:
+            for lag in self.lag_periods:
+                X[f'{col}_lag_{lag}'] = X[col].shift(lag)
+        
+        return X
     
     def _create_rolling_features(self, X: pd.DataFrame, target_col: Optional[str] = None) -> pd.DataFrame:
-        """Create rolling window statistics"""
-        # TODO: Create rolling statistics
-        # For each window size: mean, std, min, max
-        # Consider exponential weighted moving averages
-        pass
+        """Create rolling window statistics"""        
+        X = X.copy()
+        
+        # Determine which columns to create rolling features for
+        if target_col and target_col in X.columns:
+            cols_to_roll = [target_col]
+        else:
+            cols_to_roll = X.select_dtypes(include=[np.number]).columns.tolist()
+        
+        # Create rolling statistics for each column and window size
+        for col in cols_to_roll:
+            for window in self.rolling_windows:
+                rolling = X[col].rolling(window=window, min_periods=1)
+                X[f'{col}_rolling_mean_{window}'] = rolling.mean()
+                X[f'{col}_rolling_std_{window}'] = rolling.std()
+                X[f'{col}_rolling_min_{window}'] = rolling.min()
+                X[f'{col}_rolling_max_{window}'] = rolling.max()
+            
+            # Exponential weighted moving average
+            X[f'{col}_ewm'] = X[col].ewm(span=7, adjust=False).mean()
+        
+        return X
 
 
 class TimeSeriesForecaster:
