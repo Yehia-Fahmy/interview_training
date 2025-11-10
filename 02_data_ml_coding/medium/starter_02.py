@@ -160,20 +160,75 @@ class ImbalancedEvaluator:
     def plot_confusion_matrix(self, y_true: np.ndarray, y_pred: np.ndarray,
                              ax: Optional[plt.Axes] = None):
         """Plot confusion matrix"""
-        # TODO: Create confusion matrix visualization
-        pass
+        cm = confusion_matrix(y_true, y_pred)
+        
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(8, 6))
+        
+        im = ax.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+        ax.figure.colorbar(im, ax=ax)
+        
+        # Get class labels
+        classes = np.unique(np.concatenate([y_true, y_pred]))
+        tick_marks = np.arange(len(classes))
+        ax.set_xticks(tick_marks)
+        ax.set_yticks(tick_marks)
+        ax.set_xticklabels(classes)
+        ax.set_yticklabels(classes)
+        
+        # Add text annotations
+        thresh = cm.max() / 2.
+        for i in range(len(classes)):
+            for j in range(len(classes)):
+                ax.text(j, i, format(cm[i, j], 'd'),
+                       horizontalalignment="center",
+                       color="white" if cm[i, j] > thresh else "black")
+        
+        ax.set_ylabel('True label')
+        ax.set_xlabel('Predicted label')
+        ax.set_title('Confusion Matrix')
+        plt.tight_layout()
+        
+        return ax
     
     def plot_precision_recall_curve(self, y_true: np.ndarray, y_proba: np.ndarray,
                                    ax: Optional[plt.Axes] = None):
         """Plot precision-recall curve"""
-        # TODO: Create PR curve visualization
-        pass
+        precision, recall, thresholds = precision_recall_curve(y_true, y_proba)
+        avg_precision = average_precision_score(y_true, y_proba)
+        
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(8, 6))
+        
+        ax.plot(recall, precision, linewidth=2, label=f'PR curve (AP = {avg_precision:.3f})')
+        ax.set_xlabel('Recall')
+        ax.set_ylabel('Precision')
+        ax.set_title('Precision-Recall Curve')
+        ax.legend(loc='best')
+        ax.grid(True, alpha=0.3)
+        plt.tight_layout()
+        
+        return ax
     
     def plot_roc_curve(self, y_true: np.ndarray, y_proba: np.ndarray,
                        ax: Optional[plt.Axes] = None):
         """Plot ROC curve"""
-        # TODO: Create ROC curve visualization
-        pass
+        fpr, tpr, thresholds = roc_curve(y_true, y_proba)
+        roc_auc = roc_auc_score(y_true, y_proba)
+        
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(8, 6))
+        
+        ax.plot(fpr, tpr, linewidth=2, label=f'ROC curve (AUC = {roc_auc:.3f})')
+        ax.plot([0, 1], [0, 1], 'k--', linewidth=1, label='Random classifier')
+        ax.set_xlabel('False Positive Rate')
+        ax.set_ylabel('True Positive Rate')
+        ax.set_title('ROC Curve')
+        ax.legend(loc='lower right')
+        ax.grid(True, alpha=0.3)
+        plt.tight_layout()
+        
+        return ax
     
     def generate_report(self, y_true: np.ndarray, y_pred: np.ndarray,
                        y_proba: Optional[np.ndarray] = None) -> str:
@@ -188,9 +243,78 @@ class ImbalancedEvaluator:
         Returns:
             Formatted report string
         """
-        # TODO: Generate human-readable report
-        # Include all metrics, class distribution, recommendations
-        pass
+        report_lines = []
+        report_lines.append("=" * 60)
+        report_lines.append("IMBALANCED CLASSIFICATION EVALUATION REPORT")
+        report_lines.append("=" * 60)
+        report_lines.append("")
+        
+        # Class distribution
+        unique_classes, counts = np.unique(y_true, return_counts=True)
+        total = len(y_true)
+        report_lines.append("CLASS DISTRIBUTION:")
+        for cls, count in zip(unique_classes, counts):
+            percentage = (count / total) * 100
+            report_lines.append(f"  Class {cls}: {count} ({percentage:.2f}%)")
+        report_lines.append("")
+        
+        # Compute metrics
+        metrics = self.evaluate(y_true, y_pred, y_proba)
+        
+        # Basic metrics
+        report_lines.append("CLASSIFICATION METRICS:")
+        report_lines.append(f"  Accuracy: {metrics.get('accuracy', 0):.4f}")
+        if 'balanced_accuracy' in metrics:
+            report_lines.append(f"  Balanced Accuracy: {metrics.get('balanced_accuracy', 0):.4f}")
+        report_lines.append(f"  Precision: {metrics.get('precision', 0):.4f}")
+        report_lines.append(f"  Recall: {metrics.get('recall', 0):.4f}")
+        report_lines.append(f"  F1-Score: {metrics.get('f1', 0):.4f}")
+        report_lines.append("")
+        
+        # Probability-based metrics
+        if y_proba is not None:
+            report_lines.append("PROBABILITY-BASED METRICS:")
+            if 'roc_auc' in metrics:
+                report_lines.append(f"  ROC-AUC: {metrics.get('roc_auc', 0):.4f}")
+            if 'pr_auc' in metrics:
+                report_lines.append(f"  PR-AUC: {metrics.get('pr_auc', 0):.4f}")
+            report_lines.append("")
+        
+        # Confusion matrix summary
+        cm = confusion_matrix(y_true, y_pred)
+        report_lines.append("CONFUSION MATRIX:")
+        report_lines.append(f"                Predicted")
+        report_lines.append(f"                0      1")
+        report_lines.append(f"  Actual  0    {cm[0,0]:5d}  {cm[0,1]:5d}")
+        report_lines.append(f"          1    {cm[1,0]:5d}  {cm[1,1]:5d}")
+        report_lines.append("")
+        
+        # Recommendations
+        report_lines.append("RECOMMENDATIONS:")
+        if metrics.get('recall', 0) < 0.5:
+            report_lines.append("  ⚠ Low recall detected. Consider:")
+            report_lines.append("    - Using sampling strategies (SMOTE, ADASYN)")
+            report_lines.append("    - Adjusting class weights")
+            report_lines.append("    - Lowering decision threshold")
+        
+        if metrics.get('precision', 0) < 0.5:
+            report_lines.append("  ⚠ Low precision detected. Consider:")
+            report_lines.append("    - Increasing decision threshold")
+            report_lines.append("    - Feature engineering to improve separability")
+        
+        if y_proba is not None and metrics.get('roc_auc', 0) < 0.7:
+            report_lines.append("  ⚠ Low ROC-AUC detected. Consider:")
+            report_lines.append("    - Feature selection or engineering")
+            report_lines.append("    - Trying different algorithms")
+            report_lines.append("    - Collecting more training data")
+        
+        if metrics.get('f1', 0) > 0.7:
+            report_lines.append("  ✓ Good F1-score achieved!")
+        
+        report_lines.append("")
+        report_lines.append("=" * 60)
+        
+        return "\n".join(report_lines)
 
 
 # Usage example
