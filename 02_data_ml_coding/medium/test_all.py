@@ -659,6 +659,275 @@ def test_exercise_4():
         return 0, 1
 
 
+def test_exercise_5():
+    """Test Exercise 5: PyTorch Deep Learning Pipeline"""
+    print(f"\n{Colors.BOLD}{Colors.CYAN}{'='*60}")
+    print("Exercise 5: PyTorch Deep Learning Pipeline")
+    print(f"{'='*60}{Colors.RESET}")
+    
+    try:
+        student_module = load_module('starter_05.py', 'starter_05')
+        
+        passed = []
+        failed = []
+        
+        # Check if PyTorch is available
+        try:
+            import torch
+            TORCH_AVAILABLE = True
+        except ImportError:
+            TORCH_AVAILABLE = False
+            print(f"{Colors.YELLOW}⚠ PyTorch not available. Install with: pip install torch{Colors.RESET}")
+            return 0, 1
+        
+        # Test student implementation
+        try:
+            # Test 1: CustomDataset basic functionality
+            print(f"\n{Colors.BLUE}Test 1: CustomDataset Basic Functionality{Colors.RESET}")
+            np.random.seed(42)
+            n_samples = 100
+            n_features = 10
+            X = np.random.randn(n_samples, n_features).astype(np.float32)
+            y = np.random.randn(n_samples).astype(np.float32)
+            
+            dataset = student_module.CustomDataset(X, y, fit_scaler=True)
+            
+            assert_condition(len(dataset) == n_samples,
+                           "Dataset returns correct length", passed, failed)
+            
+            sample_features, sample_target = dataset[0]
+            assert_condition(isinstance(sample_features, torch.Tensor),
+                           "Dataset returns torch.Tensor for features", passed, failed)
+            assert_condition(isinstance(sample_target, torch.Tensor),
+                           "Dataset returns torch.Tensor for target", passed, failed)
+            assert_condition(sample_features.shape == (n_features,),
+                           "Feature tensor has correct shape", passed, failed)
+            
+            scaler = dataset.get_scaler()
+            assert_condition(scaler is not None,
+                           "Dataset stores scaler", passed, failed)
+            
+            # Test 2: Data leakage prevention (scaler from train to test)
+            print(f"\n{Colors.BLUE}Test 2: Data Leakage Prevention{Colors.RESET}")
+            X_train = np.random.randn(80, n_features).astype(np.float32)
+            X_test = np.random.randn(20, n_features).astype(np.float32)
+            y_train = np.random.randn(80).astype(np.float32)
+            y_test = np.random.randn(20).astype(np.float32)
+            
+            train_dataset = student_module.CustomDataset(X_train, y_train, fit_scaler=True)
+            test_dataset = student_module.CustomDataset(X_test, y_test, 
+                                                       scaler=train_dataset.get_scaler(), 
+                                                       fit_scaler=False)
+            
+            assert_condition(test_dataset.get_scaler() is not None,
+                           "Test dataset uses provided scaler", passed, failed)
+            
+            # Check that test data is scaled (mean should be close to 0, std close to 1)
+            test_features_scaled = np.array([test_dataset[i][0].numpy() for i in range(len(test_dataset))])
+            test_mean = test_features_scaled.mean(axis=0)
+            test_std = test_features_scaled.std(axis=0)
+            # Note: Test set mean won't be exactly 0, but should be reasonable
+            assert_condition(abs(test_mean.mean()) < 2.0,
+                           "Test data is scaled (no obvious leakage)", passed, failed)
+            
+            # Test 3: NeuralNetwork architecture
+            print(f"\n{Colors.BLUE}Test 3: NeuralNetwork Architecture{Colors.RESET}")
+            model = student_module.NeuralNetwork(
+                input_size=10,
+                hidden_sizes=[32, 16],
+                output_size=1,
+                task_type='regression',
+                dropout_rate=0.2
+            )
+            
+            # Test forward pass
+            test_input = torch.randn(5, 10)
+            output = model(test_input)
+            
+            assert_condition(output.shape == (5, 1),
+                           "Model output has correct shape for regression", passed, failed)
+            
+            # Test classification model
+            model_cls = student_module.NeuralNetwork(
+                input_size=10,
+                hidden_sizes=[32, 16],
+                output_size=2,
+                task_type='classification',
+                dropout_rate=0.2
+            )
+            output_cls = model_cls(test_input)
+            assert_condition(output_cls.shape == (5, 2),
+                           "Model output has correct shape for classification", passed, failed)
+            
+            # Test 4: DataLoader creation
+            print(f"\n{Colors.BLUE}Test 4: DataLoader Creation{Colors.RESET}")
+            X_train = np.random.randn(100, 10).astype(np.float32)
+            y_train = np.random.randn(100).astype(np.float32)
+            X_val = np.random.randn(20, 10).astype(np.float32)
+            y_val = np.random.randn(20).astype(np.float32)
+            
+            train_loader, val_loader = student_module.create_data_loaders(
+                X_train, y_train, X_val, y_val, batch_size=16
+            )
+            
+            assert_condition(train_loader is not None,
+                           "Train loader created", passed, failed)
+            assert_condition(val_loader is not None,
+                           "Val loader created", passed, failed)
+            
+            # Test batch iteration
+            batch = next(iter(train_loader))
+            assert_condition(len(batch) == 2,
+                           "Batch contains features and targets", passed, failed)
+            assert_condition(batch[0].shape[0] <= 16,
+                           "Batch size is correct", passed, failed)
+            
+            # Test 5: ModelTrainer training loop
+            print(f"\n{Colors.BLUE}Test 5: ModelTrainer Training Loop{Colors.RESET}")
+            model = student_module.create_model(
+                input_size=10,
+                task_type='regression',
+                hidden_sizes=[32, 16],
+                dropout_rate=0.2
+            )
+            
+            criterion = torch.nn.MSELoss()
+            optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+            
+            trainer = student_module.ModelTrainer(
+                model=model,
+                criterion=criterion,
+                optimizer=optimizer
+            )
+            
+            # Test training epoch
+            train_loss, train_metrics = trainer.train_epoch(train_loader)
+            assert_condition(isinstance(train_loss, float),
+                           "Training epoch returns loss", passed, failed)
+            assert_condition(train_loss >= 0,
+                           "Training loss is non-negative", passed, failed)
+            assert_condition(isinstance(train_metrics, dict),
+                           "Training epoch returns metrics dict", passed, failed)
+            
+            # Test validation
+            val_loss, val_metrics = trainer.validate(val_loader)
+            assert_condition(isinstance(val_loss, float),
+                           "Validation returns loss", passed, failed)
+            assert_condition(isinstance(val_metrics, dict),
+                           "Validation returns metrics dict", passed, failed)
+            
+            # Test 6: Full training with early stopping
+            print(f"\n{Colors.BLUE}Test 6: Full Training with Early Stopping{Colors.RESET}")
+            # Use smaller dataset for faster testing
+            X_train_small = np.random.randn(50, 10).astype(np.float32)
+            y_train_small = np.random.randn(50).astype(np.float32)
+            X_val_small = np.random.randn(10, 10).astype(np.float32)
+            y_val_small = np.random.randn(10).astype(np.float32)
+            
+            train_loader_small, val_loader_small = student_module.create_data_loaders(
+                X_train_small, y_train_small, X_val_small, y_val_small, batch_size=16
+            )
+            
+            model_small = student_module.create_model(
+                input_size=10,
+                task_type='regression',
+                hidden_sizes=[16, 8],
+                dropout_rate=0.2
+            )
+            
+            criterion_small = torch.nn.MSELoss()
+            optimizer_small = torch.optim.Adam(model_small.parameters(), lr=0.01)
+            
+            trainer_small = student_module.ModelTrainer(
+                model=model_small,
+                criterion=criterion_small,
+                optimizer=optimizer_small
+            )
+            
+            history = trainer_small.train(
+                train_loader=train_loader_small,
+                val_loader=val_loader_small,
+                epochs=5,
+                early_stopping_patience=3,
+                verbose=False
+            )
+            
+            assert_condition(isinstance(history, dict),
+                           "Training returns history dict", passed, failed)
+            assert_condition('train_loss' in history,
+                           "History contains train_loss", passed, failed)
+            assert_condition('val_loss' in history,
+                           "History contains val_loss", passed, failed)
+            assert_condition(len(history['train_loss']) > 0,
+                           "Training loss tracked", passed, failed)
+            
+            # Test 7: Model prediction
+            print(f"\n{Colors.BLUE}Test 7: Model Prediction{Colors.RESET}")
+            predictions = trainer_small.predict(val_loader_small)
+            
+            assert_condition(isinstance(predictions, np.ndarray),
+                           "Predictions are numpy array", passed, failed)
+            assert_condition(len(predictions) == len(y_val_small),
+                           "Predictions match data size", passed, failed)
+            
+            # Test 8: Model checkpointing
+            print(f"\n{Colors.BLUE}Test 8: Model Checkpointing{Colors.RESET}")
+            import tempfile
+            import os
+            
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.pth') as tmp_file:
+                checkpoint_path = tmp_file.name
+            
+            try:
+                trainer_small.save_model(checkpoint_path)
+                assert_condition(os.path.exists(checkpoint_path),
+                               "Model checkpoint saved", passed, failed)
+                
+                # Create new trainer and load
+                model_new = student_module.create_model(
+                    input_size=10,
+                    task_type='regression',
+                    hidden_sizes=[16, 8],
+                    dropout_rate=0.2
+                )
+                optimizer_new = torch.optim.Adam(model_new.parameters(), lr=0.01)
+                trainer_new = student_module.ModelTrainer(
+                    model=model_new,
+                    criterion=criterion_small,
+                    optimizer=optimizer_new
+                )
+                
+                trainer_new.load_model(checkpoint_path)
+                assert_condition(len(trainer_new.train_losses) > 0,
+                               "Model checkpoint loaded", passed, failed)
+            finally:
+                if os.path.exists(checkpoint_path):
+                    os.remove(checkpoint_path)
+            
+            print(f"\n{Colors.BLUE}Results:{Colors.RESET}")
+            print(f"  Final train loss: {history['train_loss'][-1]:.4f}")
+            print(f"  Final val loss: {history['val_loss'][-1]:.4f}")
+            print(f"  Model parameters: {sum(p.numel() for p in model_small.parameters())}")
+                
+        except Exception as e:
+            print(f"{Colors.RED}✗ Student solution: ERROR{Colors.RESET}")
+            print(f"  {str(e)}")
+            traceback.print_exc()
+            failed.append(f"Exception: {str(e)}")
+        
+        print(f"\n{Colors.BOLD}Summary:{Colors.RESET}")
+        print(f"{Colors.GREEN}Passed: {len(passed)}{Colors.RESET}")
+        print(f"{Colors.RED}Failed: {len(failed)}{Colors.RESET}")
+        if failed:
+            print(f"{Colors.RED}Failed tests: {', '.join(failed)}{Colors.RESET}")
+        return len(passed), len(failed)
+        
+    except Exception as e:
+        print(f"{Colors.RED}Error: {str(e)}{Colors.RESET}")
+        traceback.print_exc()
+        return 0, 1
+
+
 def main():
     """Run all tests"""
     print(f"{Colors.BOLD}{Colors.CYAN}")
@@ -674,7 +943,7 @@ def main():
                 idx = sys.argv.index('--exercise') if '--exercise' in sys.argv else sys.argv.index('-e')
                 exercise_num = int(sys.argv[idx + 1])
             except (IndexError, ValueError):
-                print(f"{Colors.RED}Invalid exercise number. Use: python test_all.py --exercise <1-4>{Colors.RESET}")
+                print(f"{Colors.RED}Invalid exercise number. Use: python test_all.py --exercise <1-5>{Colors.RESET}")
                 return
     
     total_passed = 0
@@ -685,6 +954,7 @@ def main():
         (2, test_exercise_2),
         (3, test_exercise_3),
         (4, test_exercise_4),
+        (5, test_exercise_5),
     ]
     
     if exercise_num:

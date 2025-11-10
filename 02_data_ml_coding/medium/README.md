@@ -10,6 +10,7 @@ All exercises are documented in **[EXERCISES.md](EXERCISES.md)**:
 2. **Handling Imbalanced Classification** - Implement sampling strategies, appropriate evaluation metrics, and probability calibration for imbalanced data
 3. **Time Series Forecasting Pipeline** - Create a forecasting system with proper feature engineering, multiple models, and time-aware evaluation
 4. **Model Interpretability & Explainability** - Build an interpretability system with SHAP values, feature importance, and model auditing
+5. **PyTorch Deep Learning Pipeline** - Build a complete PyTorch pipeline with custom datasets, neural network architectures, training loops, and evaluation
 
 ## Getting Started
 
