@@ -22,6 +22,10 @@ statsmodels>=0.14.0
 # Required for SHAP values and explainability
 shap>=0.42.0
 
+# Exercise 5: PyTorch Deep Learning Pipeline
+# Required for PyTorch neural network implementation
+torch>=2.0.0
+
 # Optional but recommended for better performance
 # Uncomment if you want faster implementations:
 # numba>=0.57.0  # Speeds up some computations

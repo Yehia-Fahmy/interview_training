@@ -325,6 +325,104 @@ For individual predictions, SHAP values show how each feature contributed. LIME 
 
 ---
 
+## Exercise 5: PyTorch Deep Learning Pipeline
+
+**Difficulty:** Medium  
+**Time Limit:** 75-90 minutes (with AI assistance allowed)  
+**Focus:** PyTorch fundamentals, custom architectures, training loops, data handling, model evaluation
+
+### Problem
+
+Build a complete PyTorch deep learning pipeline from scratch. This challenge requires you to implement:
+
+1. **Custom Dataset class** for handling tabular data with proper preprocessing
+2. **Flexible neural network architecture** with configurable depth, width, and regularization
+3. **Complete training loop** with validation, early stopping, and checkpointing
+4. **Model evaluation** with appropriate metrics for regression and classification
+5. **Production-ready code** that handles edge cases and is reusable
+
+This challenge tests your understanding of PyTorch fundamentals and ability to build production-ready deep learning systems.
+
+### Requirements
+
+1. Create a `CustomDataset` class that:
+   - Inherits from `torch.utils.data.Dataset`
+   - Handles feature scaling (fit scaler on training, apply to test)
+   - Properly implements `__len__` and `__getitem__`
+   - Returns data as PyTorch tensors
+   - Prevents data leakage by separating fit/transform logic
+
+2. Create a `NeuralNetwork` class that:
+   - Inherits from `nn.Module`
+   - Supports configurable architecture (hidden layer sizes)
+   - Includes batch normalization and dropout for regularization
+   - Handles both regression and classification tasks
+   - Uses appropriate output activations (sigmoid/softmax for classification, none for regression)
+
+3. Create a `ModelTrainer` class that:
+   - Implements training loop with proper gradient handling
+   - Implements validation loop with `torch.no_grad()`
+   - Tracks training/validation loss and metrics
+   - Implements early stopping based on validation loss
+   - Saves and loads model checkpoints
+   - Supports learning rate scheduling
+   - Computes appropriate metrics (MAE, RMSE, R2 for regression; accuracy, precision, recall, F1 for classification)
+
+4. Design considerations:
+   - **Data leakage**: Ensure test set scaling uses training statistics
+   - **Device handling**: Support both CPU and GPU
+   - **Memory efficiency**: Properly handle batch processing
+   - **Reproducibility**: Set random seeds appropriately
+   - **Error handling**: Handle edge cases (empty batches, single samples, etc.)
+
+### Hints (Don't peek too early!)
+
+<details>
+<summary>Hint 1: Dataset Implementation</summary>
+Remember that `__getitem__` should return tensors, not numpy arrays. Use `torch.tensor()` for conversion. For scaling, fit the scaler only on training data and store it so you can apply it to validation/test sets. Consider what happens if targets are None (inference mode).
+</details>
+
+<details>
+<summary>Hint 2: Network Architecture</summary>
+Use `nn.ModuleList` or `nn.Sequential` to organize layers. Batch normalization should come after linear layers but before activation. Dropout is typically applied after activation. For classification, use sigmoid for binary (1 output) or softmax for multi-class. For regression, no activation on output.
+</details>
+
+<details>
+<summary>Hint 3: Training Loop</summary>
+Always call `optimizer.zero_grad()` before backward pass. Use `model.train()` and `model.eval()` to set appropriate modes (affects dropout, batch norm). For validation, wrap everything in `torch.no_grad()` to save memory. Track predictions and targets separately, then compute metrics after the epoch.
+</details>
+
+<details>
+<summary>Hint 4: Early Stopping and Checkpointing</summary>
+Save model state dict when validation loss improves. Use `model.state_dict().copy()` to avoid reference issues. Load the best model state at the end of training. For early stopping, increment a counter when validation loss doesn't improve, reset when it does.
+</details>
+
+<details>
+<summary>Hint 5: Metrics Computation</summary>
+Concatenate all batch predictions and targets using `torch.cat()`. Convert to numpy for sklearn metrics. Handle different output shapes (squeeze if needed). For classification, convert probabilities to classes using threshold (0.5) or argmax.
+</details>
+
+### Key Learning Points
+
+- Understanding PyTorch's Dataset and DataLoader abstractions
+- Building flexible, reusable neural network architectures
+- Implementing proper training loops with validation
+- Handling device placement (CPU/GPU) correctly
+- Preventing data leakage in preprocessing
+- Implementing early stopping and model checkpointing
+- Computing appropriate metrics for different task types
+
+### Design Considerations to Explain
+
+- Why did you choose specific activation functions?
+- How do you prevent data leakage in your Dataset class?
+- What's your strategy for handling different batch sizes?
+- How would you modify this for multi-GPU training?
+- What considerations are important for production deployment?
+- How do you handle class imbalance in classification tasks?
+
+---
+
 ## General Guidelines
 
 ### Code Quality Expectations
