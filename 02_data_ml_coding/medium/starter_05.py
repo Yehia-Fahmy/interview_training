@@ -48,27 +48,26 @@ class CustomDataset(Dataset):
         self.features = features.astype(np.float32)
         self.targets = targets.astype(np.float32) if targets is not None else None
         
-        # TODO: Implement feature scaling
+        # Implement feature scaling
         # 1. If fit_scaler is True, create and fit a StandardScaler
         # 2. If scaler is provided, use it (for test/inference)
         # 3. Transform features using the scaler
         # 4. Store the scaler for later use
         
-        self.scaler = scaler
         if fit_scaler:
-            # TODO: Create and fit scaler
-            pass
+            # Create and fit scaler on training data
+            self.scaler = StandardScaler()
+            self.features = self.scaler.fit_transform(self.features)
         else:
             if scaler is None:
                 raise ValueError("Scaler must be provided when fit_scaler=False")
-        
-        # TODO: Transform features
-        # self.features = ...
+            # Use provided scaler and transform features
+            self.scaler = scaler
+            self.features = self.scaler.transform(self.features)
     
     def __len__(self) -> int:
         """Return dataset size"""
-        # TODO: Return number of samples
-        pass
+        return len(self.features)
     
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, ...]:
         """
@@ -80,9 +79,15 @@ class CustomDataset(Dataset):
         Returns:
             Tuple of (features, target) if targets exist, else (features,)
         """
-        # TODO: Return features and optionally target as torch tensors
-        # Convert numpy arrays to torch tensors
-        pass
+        # Get features at index idx and convert to torch tensor
+        features = torch.tensor(self.features[idx], dtype=torch.float32)
+        
+        # If targets exist, return (features, target), else just (features,)
+        if self.targets is not None:
+            target = torch.tensor(self.targets[idx], dtype=torch.float32)
+            return (features, target)
+        else:
+            return (features,)
     
     def get_scaler(self) -> Optional[StandardScaler]:
         """Get the fitted scaler"""
