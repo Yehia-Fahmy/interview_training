@@ -524,6 +524,14 @@ class TimeSeriesEvaluator:
         y_true = np.array(y_true)
         y_pred = np.array(y_pred)
         
+        # Remove NaN values from both arrays (align indices)
+        mask = ~(np.isnan(y_true) | np.isnan(y_pred))
+        if mask.sum() == 0:
+            return {'mae': np.nan, 'rmse': np.nan, 'mape': np.nan, 'mase': np.nan}
+        
+        y_true = y_true[mask]
+        y_pred = y_pred[mask]
+        
         # MAE (Mean Absolute Error)
         mae = np.mean(np.abs(y_true - y_pred))
         
@@ -531,9 +539,9 @@ class TimeSeriesEvaluator:
         rmse = np.sqrt(np.mean((y_true - y_pred) ** 2))
         
         # MAPE (Mean Absolute Percentage Error)
-        mask = y_true != 0
-        if mask.sum() > 0:
-            mape = np.mean(np.abs((y_true[mask] - y_pred[mask]) / y_true[mask])) * 100
+        mask_nonzero = y_true != 0
+        if mask_nonzero.sum() > 0:
+            mape = np.mean(np.abs((y_true[mask_nonzero] - y_pred[mask_nonzero]) / y_true[mask_nonzero])) * 100
         else:
             mape = np.nan
         
@@ -641,17 +649,37 @@ if __name__ == "__main__":
     
     # Forecast
     if STATSMODELS_AVAILABLE:
-        forecaster = TimeSeriesForecaster(method='arima', forecast_horizon=len(test_data))
-        forecaster.fit(train_data)
-        forecasts, conf_intervals = forecaster.predict(n_periods=len(test_data))
+        # Clean train_data (remove NaNs) - ARIMA can't handle missing values
+        train_data_clean = train_data.dropna()
+        # Preserve frequency information for statsmodels
+        # After dropna(), we need to recreate index with frequency if possible
+        if isinstance(train_data_clean.index, pd.DatetimeIndex):
+            freq = train_data.index.freq or pd.infer_freq(train_data.index)
+            if freq and train_data_clean.index.freq is None:
+                # Recreate index with frequency - use integer index if frequency doesn't match
+                try:
+                    # Try to set frequency - if it fails, use integer index
+                    train_data_clean = train_data_clean.copy()
+                    train_data_clean.index = pd.DatetimeIndex(train_data_clean.index, freq=freq)
+                except (ValueError, TypeError):
+                    # If frequency can't be set (due to gaps), use integer index
+                    # ARIMA will work fine with integer index
+                    pass
         
-        # Evaluate
-        evaluator = TimeSeriesEvaluator()
-        metrics = evaluator.evaluate(test_data.values, forecasts)
-        
-        print("\n=== Forecasting Results ===")
-        print(f"MAE: {metrics.get('mae', 0):.4f}")
-        print(f"RMSE: {metrics.get('rmse', 0):.4f}")
-        print(f"MAPE: {metrics.get('mape', 0):.4f}%")
+        if len(train_data_clean) == 0:
+            print("Error: No valid training data after removing NaNs")
+        else:
+            forecaster = TimeSeriesForecaster(method='arima', forecast_horizon=len(test_data))
+            forecaster.fit(train_data_clean)
+            forecasts, conf_intervals = forecaster.predict(n_periods=len(test_data))
+            
+            # Evaluate
+            evaluator = TimeSeriesEvaluator()
+            metrics = evaluator.evaluate(test_data.values, forecasts)
+            
+            print("\n=== Forecasting Results ===")
+            print(f"MAE: {metrics.get('mae', np.nan):.4f}" if not np.isnan(metrics.get('mae', np.nan)) else "MAE: nan")
+            print(f"RMSE: {metrics.get('rmse', np.nan):.4f}" if not np.isnan(metrics.get('rmse', np.nan)) else "RMSE: nan")
+            print(f"MAPE: {metrics.get('mape', np.nan):.4f}%" if not np.isnan(metrics.get('mape', np.nan)) else "MAPE: nan%")
     else:
         print("\nStatsmodels not available. Install with: pip install statsmodels")
