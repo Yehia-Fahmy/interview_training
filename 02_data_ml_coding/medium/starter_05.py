@@ -445,15 +445,36 @@ def create_data_loaders(X_train: np.ndarray,
     Returns:
         Tuple of (train_loader, val_loader)
     """
-    # TODO: Create datasets
-    # TODO: Create data loaders
-    # Make sure to pass scaler from train dataset to val dataset
+    # Create train dataset with fit_scaler=True
+    train_dataset = CustomDataset(
+        features=X_train,
+        targets=y_train,
+        fit_scaler=True
+    )
     
-    train_dataset = None  # TODO: Create train dataset with fit_scaler=True
-    val_dataset = None  # TODO: Create val dataset with scaler from train_dataset
+    # Get scaler from train dataset
+    scaler = train_dataset.get_scaler()
     
-    train_loader = None  # TODO: Create DataLoader
-    val_loader = None  # TODO: Create DataLoader
+    # Create validation dataset with scaler from train_dataset
+    val_dataset = CustomDataset(
+        features=X_val,
+        targets=y_val,
+        scaler=scaler,
+        fit_scaler=False
+    )
+    
+    # Create DataLoaders
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=shuffle
+    )
+    
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=batch_size,
+        shuffle=False  # Don't shuffle validation data
+    )
     
     return train_loader, val_loader
 
