@@ -128,27 +128,49 @@ class NeuralNetwork(nn.Module):
         self.output_size = output_size
         self.task_type = task_type
         
-        # TODO: Build the network architecture
-        # 1. Create layers list to store all layers
-        # 2. Add input layer -> first hidden layer
-        # 3. For each hidden layer:
-        #    - Add linear layer
-        #    - Add batch normalization (if enabled)
-        #    - Add activation function
-        #    - Add dropout
-        # 4. Add output layer (no activation for regression, sigmoid/softmax for classification)
-        # 5. Use nn.Sequential or nn.ModuleList to organize layers
+        # Build the network architecture
+        # Activation function mapping
+        activations = {
+            'relu': nn.ReLU(),
+            'tanh': nn.Tanh(),
+            'gelu': nn.GELU()
+        }
+        activation_fn = activations.get(activation, nn.ReLU())
         
-        self.layers = nn.ModuleList()
+        layers = []
         
-        # Input to first hidden
-        # TODO: Add first layer with batch norm, activation, dropout
-        
-        # Hidden layers
-        # TODO: Add intermediate hidden layers
+        # Build hidden layers: track previous size to connect layers properly
+        prev_size = input_size
+        for i, hidden_size in enumerate(self.hidden_sizes):
+            # Linear layer: nn.Linear(in_features, out_features)
+            layers.append(nn.Linear(prev_size, hidden_size))
+            
+            # Batch normalization (if enabled)
+            if use_batch_norm:
+                layers.append(nn.BatchNorm1d(hidden_size))
+            
+            # Activation function
+            layers.append(activation_fn)
+            
+            # Dropout (except for last hidden layer, unless classification)
+            if i < len(self.hidden_sizes) - 1 or task_type == 'classification':
+                layers.append(nn.Dropout(dropout_rate))
+            
+            prev_size = hidden_size
         
         # Output layer
-        # TODO: Add output layer (consider task_type for activation)
+        layers.append(nn.Linear(prev_size, output_size))
+        
+        # Output activation based on task type
+        if task_type == 'classification':
+            if output_size == 1:
+                layers.append(nn.Sigmoid())
+            else:
+                layers.append(nn.Softmax(dim=1))
+        # No activation for regression (output is raw)
+        
+        # Create Sequential model
+        self.network = nn.Sequential(*layers)
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -160,8 +182,8 @@ class NeuralNetwork(nn.Module):
         Returns:
             Output tensor (batch_size, output_size)
         """
-        # TODO: Implement forward pass through all layers
-        pass
+        # Forward pass through all layers
+        return self.network(x)
 
 
 class ModelTrainer:
