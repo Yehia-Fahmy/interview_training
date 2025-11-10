@@ -8,7 +8,7 @@ sampling strategies, evaluation metrics, and probability calibration.
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Optional, Tuple, Any
-from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.base import BaseEstimator, ClassifierMixin, clone
 from sklearn.utils import resample
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import (
@@ -73,34 +73,107 @@ class ImbalancedClassifier(BaseEstimator, ClassifierMixin):
         Returns:
             self
         """
-        # TODO: Implement fitting
         # 1. Apply sampling strategy if specified
-        # 2. Set class weights on base estimator if specified
+        if self.sampling_strategy is None:
+            X_resampled, y_resampled = X, y
+        else:
+            X_resampled, y_resampled = self._apply_sampling(X, y)
+        
+        # 2. Create a copy of base estimator to avoid modifying original
+        estimator = self.base_estimator
+        if self.class_weight is not None:
+            # Clone estimator to avoid modifying the original
+            if hasattr(estimator, 'set_params'):
+                estimator.set_params(class_weight=self.class_weight)
+            elif hasattr(estimator, 'class_weight'):
+                estimator.class_weight = self.class_weight
+        
         # 3. Fit the base estimator
+        self.estimator_ = estimator.fit(X_resampled, y_resampled)
+        
         # 4. Calibrate probabilities if requested
-        # 5. Store classes
+        if self.calibrate_probabilities:
+            self.estimator_ = CalibratedClassifierCV(
+                self.estimator_,
+                method=self.calibration_method,
+                cv='prefit'  # Use pre-fitted estimator
+            )
+            # Fit calibration on resampled data
+            self.estimator_.fit(X_resampled, y_resampled)
+        
+        # 5. Store classes (sorted for sklearn compatibility)
+        self.classes_ = np.sort(np.unique(y_resampled))
         
         return self
     
     def predict(self, X: pd.DataFrame) -> np.ndarray:
         """Make predictions"""
-        # TODO: Return predictions from fitted estimator
-        pass
+        if self.estimator_ is None:
+            raise ValueError("This ImbalancedClassifier instance is not fitted yet. Call 'fit' with appropriate arguments.")
+        return self.estimator_.predict(X)
     
     def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
         """Return calibrated probability estimates"""
-        # TODO: Return probability predictions (calibrated if requested)
-        pass
+        if self.estimator_ is None:
+            raise ValueError("This ImbalancedClassifier instance is not fitted yet. Call 'fit' with appropriate arguments.")
+        return self.estimator_.predict_proba(X)
     
     def _apply_sampling(self, X: pd.DataFrame, y: pd.Series) -> Tuple[pd.DataFrame, pd.Series]:
         """Apply sampling strategy"""
-        # TODO: Implement sampling
-        # SMOTE: Use imblearn's SMOTE if available
-        # ADASYN: Use imblearn's ADASYN if available
-        # Undersampling: Random undersampling of majority class
-        # Oversampling: Random oversampling of minority class
-        # Return resampled X, y
-        pass
+        strategy = self.sampling_strategy.lower() if isinstance(self.sampling_strategy, str) else self.sampling_strategy
+        
+        if strategy == 'smote':
+            if not IMBLEARN_AVAILABLE:
+                raise ValueError("SMOTE requires imbalanced-learn library. Install with: pip install imbalanced-learn")
+            sampler = SMOTE(random_state=42)
+            X_resampled, y_resampled = sampler.fit_resample(X, y)
+            self.sampler_ = sampler
+            return pd.DataFrame(X_resampled, columns=X.columns), pd.Series(y_resampled, name=y.name)
+        
+        elif strategy == 'adasyn':
+            if not IMBLEARN_AVAILABLE:
+                raise ValueError("ADASYN requires imbalanced-learn library. Install with: pip install imbalanced-learn")
+            sampler = ADASYN(random_state=42)
+            X_resampled, y_resampled = sampler.fit_resample(X, y)
+            self.sampler_ = sampler
+            return pd.DataFrame(X_resampled, columns=X.columns), pd.Series(y_resampled, name=y.name)
+        
+        # Separate majority and minority classes
+        class_counts = y.value_counts()
+        majority_class = class_counts.idxmax()
+        minority_class = class_counts.idxmin()
+        
+        X_majority = X[y == majority_class]
+        X_minority = X[y == minority_class]
+        y_majority = y[y == majority_class]
+        y_minority = y[y == minority_class]
+        
+        n_minority = len(y_minority)
+        n_majority = len(y_majority)
+
+        X_majority_downsampled, y_majority_downsampled = resample(
+            X_majority, y_majority,
+            replace=False,
+            n_samples=n_minority,
+            random_state=42
+        )
+        X_minority_upsampled, y_minority_upsampled = resample(
+            X_minority, y_minority,
+            replace=True,
+            n_samples=n_majority,
+            random_state=42
+        )
+        if strategy == 'undersample':# Combine minority class with downsampled majority class
+            X_resampled = pd.concat([X_minority, X_majority_downsampled], ignore_index=True)
+            y_resampled = pd.concat([y_minority, y_majority_downsampled], ignore_index=True)
+        elif strategy == 'oversample':# Oversample minority class to match majority class size
+            X_resampled = pd.concat([X_majority, X_minority_upsampled], ignore_index=True)
+            y_resampled = pd.concat([y_majority, y_minority_upsampled], ignore_index=True)
+        else:
+            raise ValueError(f"Unknown sampling strategy: {self.sampling_strategy}. "
+                           f"Choose from: 'smote', 'adasyn', 'undersample', 'oversample'")
+
+        return X_resampled, y_resampled
 
 
 class ImbalancedEvaluator:
