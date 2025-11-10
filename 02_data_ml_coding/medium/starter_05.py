@@ -14,6 +14,15 @@ from torch.utils.data import Dataset, DataLoader
 from typing import Dict, List, Optional, Tuple, Any, Callable
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import (
+    mean_absolute_error,
+    mean_squared_error,
+    r2_score,
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score
+)
 from pathlib import Path
 import warnings
 warnings.filterwarnings('ignore')
@@ -238,24 +247,36 @@ class ModelTrainer:
         total_loss = 0.0
         all_predictions = []
         all_targets = []
-        
-        # TODO: Implement training loop
-        # 1. Iterate over batches
-        # 2. Move data to device
-        # 3. Zero gradients
-        # 4. Forward pass
-        # 5. Compute loss
-        # 6. Backward pass
-        # 7. Update weights
-        # 8. Track loss and predictions for metrics
-        
+
         for batch_idx, batch in enumerate(dataloader):
-            # TODO: Extract features and targets from batch
-            # TODO: Move to device
-            # TODO: Forward pass
-            # TODO: Compute loss
-            # TODO: Backward pass and optimization
-            pass
+            # Extract features and targets from batch
+            features, targets = batch
+            
+            # Move to device
+            features = features.to(self.device)
+            targets = targets.to(self.device)
+            
+            # Zero gradients
+            self.optimizer.zero_grad()
+            
+            # Forward pass
+            outputs = self.model(features)
+            
+            # Handle different output shapes (squeeze if needed for regression)
+            if outputs.dim() > 1 and outputs.size(1) == 1:
+                outputs = outputs.squeeze(1)
+            
+            # Compute loss
+            loss = self.criterion(outputs, targets)
+            
+            # Backward pass and optimization
+            loss.backward()
+            self.optimizer.step()
+            
+            # Track loss and predictions for metrics
+            total_loss += loss.item()
+            all_predictions.append(outputs.detach().cpu())
+            all_targets.append(targets.detach().cpu())
         
         avg_loss = total_loss / len(dataloader)
         metrics = self._compute_metrics(all_predictions, all_targets)
@@ -276,17 +297,23 @@ class ModelTrainer:
         total_loss = 0.0
         all_predictions = []
         all_targets = []
-        
-        # TODO: Implement validation loop
-        # 1. Set model to eval mode
-        # 2. Use torch.no_grad() context
-        # 3. Iterate over batches
-        # 4. Forward pass and compute loss
-        # 5. Track predictions and targets
-        
+
         with torch.no_grad():
-            # TODO: Implement validation loop
-            pass
+            for batch_idx, batch in enumerate(dataloader):
+                features, targets = batch
+                features.to(self.device)
+                targets.to(self.device)
+
+                outputs = self.model(features)
+                if outputs.dim() > 1 and outputs.size(1) == 1:
+                    outputs = outputs.squeeze(1)
+                
+                loss = self.criterion(outputs, targets)
+
+                # Track loss and predictions for metrics
+                total_loss += loss.item()
+                all_predictions.append(outputs.detach().cpu())
+                all_targets.append(targets.detach().cpu())
         
         avg_loss = total_loss / len(dataloader)
         metrics = self._compute_metrics(all_predictions, all_targets)
@@ -324,11 +351,37 @@ class ModelTrainer:
         patience_counter = 0
         
         for epoch in range(epochs):
-            # TODO: Train and validate
-            # TODO: Update scheduler
+            train_loss, train_metrics = self.train_epoch(train_loader)
+            self.train_losses.append(train_loss)
+            self.train_metrics.append(train_metrics)
+            # Validate
+            val_loss, val_metrics = self.validate(val_loader)
+            self.val_losses.append(val_loss)
+            self.val_metrics.append(val_metrics)
+
+            if self.scheduler:
+                if isinstance(self.scheduler, optim.lr_scheduler.ReduceLROnPlateau):
+                    self.scheduler.step(val_loss)
+                else:
+                    self.scheduler.step()
             # TODO: Check for best model
-            # TODO: Early stopping logic
-            pass
+            if val_loss < self.best_val_loss:
+                self.best_model_state = self.model.state_dict().copy()
+                patience_counter = 0
+            else:
+                patience_counter += 1
+            
+            # Print progress
+            if verbose and (epoch + 1) % 5 == 0:
+                print(f"Epoch {epoch+1}/{epochs} - "
+                      f"Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, "
+                      f"Val R2: {val_metrics.get('r2', 0):.4f}")
+            
+            # Early stopping
+            if patience_counter >= early_stopping_patience:
+                if verbose:
+                    print(f"Early stopping at epoch {epoch+1}")
+                break
         
         # Load best model
         if self.best_model_state is not None:
@@ -352,20 +405,32 @@ class ModelTrainer:
         Returns:
             Dictionary of metric names and values
         """
-        # TODO: Concatenate predictions and targets
-        # TODO: Convert to numpy if needed
-        # TODO: Compute metrics based on task type:
-        #   - Regression: MAE, RMSE, R2
-        #   - Classification: Accuracy, Precision, Recall, F1
-        
-        pred_array = None  # TODO: Concatenate and convert
-        target_array = None  # TODO: Concatenate and convert
+        # Concatenate all predictions and targets
+        pred_array = torch.cat(predictions).numpy()
+        target_array = torch.cat(targets).numpy()
         
         metrics = {}
         
-        # TODO: Compute metrics based on task_type
-        # For regression: MAE, RMSE, R2
-        # For classification: Accuracy, Precision, Recall, F1
+        # Determine task type from model
+        task_type = getattr(self.model, 'task_type', 'regression')
+        
+        if task_type == 'regression':
+            metrics['mae'] = mean_absolute_error(target_array, pred_array)
+            metrics['rmse'] = np.sqrt(mean_squared_error(target_array, pred_array))
+            metrics['r2'] = r2_score(target_array, pred_array)
+        else:
+            # Classification
+            if pred_array.ndim > 1 and pred_array.shape[1] > 1:
+                pred_classes = np.argmax(pred_array, axis=1)
+            else:
+                pred_classes = (pred_array > 0.5).astype(int).flatten()
+            
+            target_classes = target_array.astype(int).flatten()
+            
+            metrics['accuracy'] = accuracy_score(target_classes, pred_classes)
+            metrics['precision'] = precision_score(target_classes, pred_classes, average='binary', zero_division=0)
+            metrics['recall'] = recall_score(target_classes, pred_classes, average='binary', zero_division=0)
+            metrics['f1'] = f1_score(target_classes, pred_classes, average='binary', zero_division=0)
         
         return metrics
     
@@ -389,11 +454,20 @@ class ModelTrainer:
         # 4. Collect predictions
         
         with torch.no_grad():
-            # TODO: Implement prediction
-            pass
+            for batch in dataloader:
+                if isinstance(batch, tuple):
+                    features = batch[0]
+                else:
+                    features = batch
+                features = features.to(self.device)
+                outputs = self.model(features)
+                
+                if outputs.dim() > 1 and outputs.size(1) == 1:
+                    outputs = outputs.squeeze(1)
+                
+                all_predictions.append(outputs.cpu())
         
-        # TODO: Concatenate and return as numpy array
-        return None
+        return torch.cat(all_predictions).numpy()
     
     def save_model(self, filepath: str):
         """Save model checkpoint"""
