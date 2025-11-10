@@ -128,7 +128,7 @@ class ImbalancedClassifier(BaseEstimator, ClassifierMixin):
             sampler = SMOTE(random_state=42)
             X_resampled, y_resampled = sampler.fit_resample(X, y)
             self.sampler_ = sampler
-            return pd.DataFrame(X_resampled, columns=X.columns), pd.Series(y_resampled, name=y.name)
+            return pd.DataFrame(X_resampled, columns=X.columns), pd.Series(y_resampled, name=y.name if hasattr(y, 'name') else None)
         
         elif strategy == 'adasyn':
             if not IMBLEARN_AVAILABLE:
@@ -136,7 +136,7 @@ class ImbalancedClassifier(BaseEstimator, ClassifierMixin):
             sampler = ADASYN(random_state=42)
             X_resampled, y_resampled = sampler.fit_resample(X, y)
             self.sampler_ = sampler
-            return pd.DataFrame(X_resampled, columns=X.columns), pd.Series(y_resampled, name=y.name)
+            return pd.DataFrame(X_resampled, columns=X.columns), pd.Series(y_resampled, name=y.name if hasattr(y, 'name') else None)
         
         # Separate majority and minority classes
         class_counts = y.value_counts()
@@ -205,11 +205,48 @@ class ImbalancedEvaluator:
         Returns:
             Dictionary of metrics
         """
-        # TODO: Implement metric computation
-        # Compute: accuracy, balanced_accuracy, precision, recall, F1
-        # If y_proba provided: ROC-AUC, PR-AUC
-        # Return dictionary of metrics
-        pass
+        metrics = {}
+        
+        # Basic classification metrics
+        metrics['accuracy'] = accuracy_score(y_true, y_pred)
+        metrics['balanced_accuracy'] = balanced_accuracy_score(y_true, y_pred)
+        metrics['precision'] = precision_score(y_true, y_pred, pos_label=self.positive_class, zero_division=0)
+        metrics['recall'] = recall_score(y_true, y_pred, pos_label=self.positive_class, zero_division=0)
+        metrics['f1'] = f1_score(y_true, y_pred, pos_label=self.positive_class, zero_division=0)
+        
+        # Probability-based metrics (if probabilities provided)
+        if y_proba is not None:
+            # Handle 2D probability array - extract probabilities for positive class
+            if y_proba.ndim == 2:
+                # For binary classification, sklearn returns [prob_class_0, prob_class_1]
+                # Extract the column corresponding to positive_class
+                unique_classes = np.unique(np.concatenate([y_true, y_pred]))
+                if len(unique_classes) == 2:
+                    # Binary: find index of positive_class in sorted unique classes
+                    sorted_classes = np.sort(unique_classes)
+                    pos_idx = np.where(sorted_classes == self.positive_class)[0]
+                    y_proba_pos = y_proba[:, pos_idx[0]] if len(pos_idx) > 0 else y_proba[:, -1]
+                else:
+                    # Multi-class: assume positive_class maps to its index
+                    y_proba_pos = y_proba[:, self.positive_class]
+            else:
+                # Already 1D - assume it's probabilities for positive class
+                y_proba_pos = y_proba
+            
+            # Compute ROC-AUC and PR-AUC
+            try:
+                metrics['roc_auc'] = roc_auc_score(y_true, y_proba_pos)
+            except ValueError:
+                # Handle case where only one class present
+                metrics['roc_auc'] = 0.0
+            
+            try:
+                metrics['pr_auc'] = average_precision_score(y_true, y_proba_pos)
+            except ValueError:
+                # Handle case where only one class present
+                metrics['pr_auc'] = 0.0
+        
+        return metrics
     
     def find_optimal_threshold(self, y_true: np.ndarray, y_proba: np.ndarray,
                               metric: str = 'f1') -> float:
@@ -224,11 +261,48 @@ class ImbalancedEvaluator:
         Returns:
             Optimal threshold value
         """
-        # TODO: Implement threshold optimization
-        # Try different thresholds
-        # Compute metric for each threshold
-        # Return threshold that maximizes metric
-        pass
+        # Extract probabilities for positive class (handle 1D/2D arrays)
+        if y_proba.ndim == 2:
+            unique_classes = np.unique(np.concatenate([y_true]))
+            if len(unique_classes) == 2:
+                sorted_classes = np.sort(unique_classes)
+                pos_idx = np.where(sorted_classes == self.positive_class)[0]
+                y_proba_pos = y_proba[:, pos_idx[0]] if len(pos_idx) > 0 else y_proba[:, -1]
+            else:
+                y_proba_pos = y_proba[:, self.positive_class]
+        else:
+            y_proba_pos = y_proba
+        
+        # Try thresholds - use unique probability values for efficiency
+        thresholds = np.sort(np.unique(y_proba_pos))
+        # Add boundaries
+        thresholds = np.concatenate([[0.0], thresholds, [1.0]])
+        
+        best_threshold = 0.5
+        best_score = -1.0
+        
+        for threshold in thresholds:
+            # Convert probabilities to predictions
+            y_pred_thresh = (y_proba_pos >= threshold).astype(int)
+            
+            # Compute metric
+            if metric == 'f1':
+                score = f1_score(y_true, y_pred_thresh, pos_label=self.positive_class, zero_division=0)
+            elif metric == 'precision':
+                score = precision_score(y_true, y_pred_thresh, pos_label=self.positive_class, zero_division=0)
+            elif metric == 'recall':
+                score = recall_score(y_true, y_pred_thresh, pos_label=self.positive_class, zero_division=0)
+            elif metric == 'balanced':
+                score = balanced_accuracy_score(y_true, y_pred_thresh)
+            else:
+                raise ValueError(f"Unknown metric: {metric}. Choose from: 'f1', 'precision', 'recall', 'balanced'")
+            
+            # Update best threshold if this is better
+            if score > best_score:
+                best_score = score
+                best_threshold = threshold
+        
+        return best_threshold
     
     def plot_confusion_matrix(self, y_true: np.ndarray, y_pred: np.ndarray,
                              ax: Optional[plt.Axes] = None):
