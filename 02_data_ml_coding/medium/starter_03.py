@@ -75,10 +75,41 @@ class TimeSeriesPreprocessor(BaseEstimator, TransformerMixin):
         Returns:
             self
         """
-        # TODO: Implement fitting
         # 1. Learn outlier thresholds if handling outliers
-        # 2. Store feature names
-        # Note: Most preprocessing is stateless, but outlier detection needs thresholds
+        if self.handle_outliers:
+            numeric_cols = X.select_dtypes(include=[np.number]).columns
+            for col in numeric_cols:
+                if self.outlier_method == 'iqr':
+                    Q1 = X[col].quantile(0.25)
+                    Q3 = X[col].quantile(0.75)
+                    IQR = Q3 - Q1
+                    # Handle edge case where IQR is 0 (constant values)
+                    if IQR == 0:
+                        self.outlier_thresholds_[col] = {
+                            'lower': Q1,
+                            'upper': Q3
+                        }
+                    else:
+                        self.outlier_thresholds_[col] = {
+                            'lower': Q1 - 1.5 * IQR,
+                            'upper': Q3 + 1.5 * IQR
+                        }
+                elif self.outlier_method == 'zscore':
+                    mean = X[col].mean()
+                    std = X[col].std()
+                    if std > 0:
+                        self.outlier_thresholds_[col] = {
+                            'lower': mean - 3 * std,
+                            'upper': mean + 3 * std
+                        }
+                    else:
+                        self.outlier_thresholds_[col] = {
+                            'lower': mean,
+                            'upper': mean
+                        }
+        
+        # 2. Store original feature names
+        self.feature_names_ = X.columns.tolist()
         
         return self
     
@@ -92,6 +123,9 @@ class TimeSeriesPreprocessor(BaseEstimator, TransformerMixin):
         Returns:
             Transformed DataFrame with engineered features
         """
+        if X.empty:
+            return X.copy()
+        
         X = X.copy()
         
         # 1. Handle missing values (initial cleanup)
@@ -114,7 +148,9 @@ class TimeSeriesPreprocessor(BaseEstimator, TransformerMixin):
             X = self._create_rolling_features(X)
         
         # 6. Handle missing values again (after lag/rolling features create NaNs)
-        X = self._handle_missing_values(X)
+        # Use forward fill for lag/rolling NaNs, then apply configured method
+        X = X.ffill().bfill()  # Handle NaNs from lag/rolling first
+        X = self._handle_missing_values(X)  # Apply configured method for any remaining
         
         return X
     
@@ -129,29 +165,27 @@ class TimeSeriesPreprocessor(BaseEstimator, TransformerMixin):
         elif self.handle_missing == 'backward_fill':
             X = X.bfill()
         elif self.handle_missing == 'mean':
-            X = X.fillna(X.mean())
+            # Only compute mean for original numeric columns (exclude time features)
+            original_numeric_cols = [col for col in self.feature_names_ 
+                                     if col in X.columns and pd.api.types.is_numeric_dtype(X[col])]
+            if original_numeric_cols:
+                means = X[original_numeric_cols].mean()
+                X[original_numeric_cols] = X[original_numeric_cols].fillna(means)
+            # For other columns (time features, lag features, etc.), use forward fill
+            X = X.ffill().bfill()
         
         return X
     
     def _handle_outliers(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Detect and handle outliers"""        
+        """Detect and handle outliers using thresholds learned during fit"""
         X = X.copy()
         
+        # Use stored thresholds from fit
         for col in X.select_dtypes(include=[np.number]).columns:
-            if self.outlier_method == 'iqr':
-                Q1 = X[col].quantile(0.25)
-                Q3 = X[col].quantile(0.75)
-                IQR = Q3 - Q1
-                lower_bound = Q1 - 1.5 * IQR
-                upper_bound = Q3 + 1.5 * IQR
-                X[col] = X[col].clip(lower=lower_bound, upper=upper_bound)
-            elif self.outlier_method == 'zscore':
-                mean = X[col].mean()
-                std = X[col].std()
-                if std > 0:
-                    lower_bound = mean - 3 * std
-                    upper_bound = mean + 3 * std
-                    X[col] = X[col].clip(lower=lower_bound, upper=upper_bound)
+            if col in self.outlier_thresholds_:
+                thresholds = self.outlier_thresholds_[col]
+                X[col] = X[col].clip(lower=thresholds['lower'], upper=thresholds['upper'])
+            # Skip columns that weren't seen during fit (new columns won't have thresholds)
         
         return X
     
@@ -181,14 +215,19 @@ class TimeSeriesPreprocessor(BaseEstimator, TransformerMixin):
         return X
     
     def _create_lag_features(self, X: pd.DataFrame, target_col: Optional[str] = None) -> pd.DataFrame:
-        """Create lag features"""        
+        """Create lag features"""
         X = X.copy()
         
         # Determine which columns to create lags for
         if target_col and target_col in X.columns:
             cols_to_lag = [target_col]
         else:
-            cols_to_lag = X.select_dtypes(include=[np.number]).columns.tolist()
+            # Exclude time features and cyclical encodings from lagging
+            time_feature_cols = ['day_of_week', 'day_of_month', 'month', 'quarter', 'year',
+                                'is_weekend', 'is_month_start', 'is_month_end',
+                                'day_of_week_sin', 'day_of_week_cos', 'month_sin', 'month_cos']
+            numeric_cols = X.select_dtypes(include=[np.number]).columns.tolist()
+            cols_to_lag = [col for col in numeric_cols if col not in time_feature_cols]
         
         # Create lag features for each column and lag period
         for col in cols_to_lag:
@@ -198,14 +237,19 @@ class TimeSeriesPreprocessor(BaseEstimator, TransformerMixin):
         return X
     
     def _create_rolling_features(self, X: pd.DataFrame, target_col: Optional[str] = None) -> pd.DataFrame:
-        """Create rolling window statistics"""        
+        """Create rolling window statistics"""
         X = X.copy()
         
         # Determine which columns to create rolling features for
         if target_col and target_col in X.columns:
             cols_to_roll = [target_col]
         else:
-            cols_to_roll = X.select_dtypes(include=[np.number]).columns.tolist()
+            # Exclude time features and cyclical encodings from rolling stats
+            time_feature_cols = ['day_of_week', 'day_of_month', 'month', 'quarter', 'year',
+                                'is_weekend', 'is_month_start', 'is_month_end',
+                                'day_of_week_sin', 'day_of_week_cos', 'month_sin', 'month_cos']
+            numeric_cols = X.select_dtypes(include=[np.number]).columns.tolist()
+            cols_to_roll = [col for col in numeric_cols if col not in time_feature_cols]
         
         # Create rolling statistics for each column and window size
         for col in cols_to_roll:
