@@ -302,11 +302,16 @@ class TimeSeriesForecaster:
         Returns:
             self
         """
-        # TODO: Implement model fitting
-        # ARIMA: Fit ARIMA model (need to determine order)
-        # Exponential Smoothing: Fit ETS model
-        # ML: This would require feature engineering first (use preprocessor)
-        pass
+        if self.method == 'arima':
+            self._fit_arima(y)
+        elif self.method == 'exponential_smoothing':
+            self._fit_exponential_smoothing(y)
+        elif self.method == 'ml':
+            raise NotImplementedError("ML-based forecasting requires feature engineering. Use preprocessor first.")
+        else:
+            raise ValueError(f"Unknown method: {self.method}")
+        
+        return self
     
     def predict(self, n_periods: Optional[int] = None) -> Tuple[np.ndarray, np.ndarray]:
         """
@@ -317,23 +322,117 @@ class TimeSeriesForecaster:
         
         Returns:
             (forecasts, confidence_intervals) tuple
+            - forecasts: array of point forecasts
+            - confidence_intervals: array of (lower, upper) bounds, or zeros if not available
         """
-        # TODO: Generate forecasts
-        # Return point forecasts and confidence intervals if available
-        pass
+        if not self.fitted_ or self.model_ is None:
+            raise ValueError("Model must be fitted before prediction. Call fit() first.")
+        
+        n_periods = n_periods or self.forecast_horizon
+        
+        if self.method == 'arima':
+            # ARIMA provides forecasts and confidence intervals
+            forecast_result = self.model_.get_forecast(steps=n_periods)
+            forecasts = forecast_result.predicted_mean.values
+            conf_int = forecast_result.conf_int().values
+        elif self.method == 'exponential_smoothing':
+            # Exponential Smoothing provides forecasts
+            forecasts = self.model_.forecast(steps=n_periods).values
+            # Try to get confidence intervals if available
+            try:
+                forecast_result = self.model_.get_prediction(start=len(self.model_.fittedvalues), 
+                                                             end=len(self.model_.fittedvalues) + n_periods - 1)
+                conf_int = forecast_result.conf_int().values
+            except:
+                # If confidence intervals not available, return zeros
+                conf_int = np.zeros((n_periods, 2))
+        else:
+            raise ValueError(f"Prediction not implemented for method: {self.method}")
+        
+        return forecasts, conf_int
     
     def _fit_arima(self, y: pd.Series):
         """Fit ARIMA model"""
-        # TODO: Implement ARIMA fitting
-        # Auto-select order or use provided order
-        # Handle non-stationarity (differencing)
-        pass
+        if not STATSMODELS_AVAILABLE:
+            raise ImportError("statsmodels is required for ARIMA. Install with: pip install statsmodels")
+        
+        # Get ARIMA order from model_params, or use auto-selection
+        order = self.model_params.get('order', None)
+        
+        if order is None:
+            # Auto-select order: try common combinations and select best AIC
+            # For simplicity, use a reasonable default or simple grid search
+            # Common orders: (1,1,1), (2,1,2), (0,1,1)
+            orders_to_try = [
+                (1, 1, 1),  # Most common default
+                (2, 1, 2),
+                (0, 1, 1),  # Simple differencing + MA
+                (1, 1, 0),  # AR + differencing
+                (0, 1, 0),  # Simple random walk
+            ]
+            
+            best_aic = np.inf
+            best_order = (1, 1, 1)
+            best_model = None
+            
+            for order_candidate in orders_to_try:
+                try:
+                    model = ARIMA(y, order=order_candidate)
+                    fitted_model = model.fit()
+                    if fitted_model.aic < best_aic:
+                        best_aic = fitted_model.aic
+                        best_order = order_candidate
+                        best_model = fitted_model
+                except:
+                    continue
+            
+            if best_model is None:
+                # Fallback to default if all fail
+                order = (1, 1, 1)
+                self.model_ = ARIMA(y, order=order).fit()
+            else:
+                self.model_ = best_model
+                self.model_params['order'] = best_order
+        else:
+            # Use provided order
+            self.model_ = ARIMA(y, order=order).fit()
+        
+        self.fitted_ = True
     
     def _fit_exponential_smoothing(self, y: pd.Series):
         """Fit Exponential Smoothing model"""
-        # TODO: Implement ETS fitting
-        # Detect trend and seasonality
-        pass
+        if not STATSMODELS_AVAILABLE:
+            raise ImportError("statsmodels is required for Exponential Smoothing. Install with: pip install statsmodels")
+        
+        # Get parameters from model_params or use defaults
+        trend = self.model_params.get('trend', 'add')  # 'add', 'mul', or None
+        seasonal = self.model_params.get('seasonal', None)  # 'add', 'mul', or None
+        seasonal_periods = self.model_params.get('seasonal_periods', None)
+        
+        # Auto-detect seasonal period from data frequency if not provided
+        if seasonal_periods is None and seasonal is not None:
+            if isinstance(y.index, pd.DatetimeIndex):
+                freq = pd.infer_freq(y.index)
+                if freq:
+                    # Map common frequencies to seasonal periods
+                    freq_map = {
+                        'D': 7,      # Daily -> weekly seasonality
+                        'W': 52,     # Weekly -> yearly
+                        'M': 12,     # Monthly -> yearly
+                        'Q': 4,      # Quarterly -> yearly
+                        'H': 24,     # Hourly -> daily
+                    }
+                    seasonal_periods = freq_map.get(freq[:1], None)
+        
+        # Fit model
+        self.model_ = ExponentialSmoothing(
+            y,
+            trend=trend,
+            seasonal=seasonal,
+            seasonal_periods=seasonal_periods
+        ).fit()
+        
+        self.fitted_ = True
 
 
 class TimeSeriesEvaluator:
@@ -367,11 +466,49 @@ class TimeSeriesEvaluator:
         Returns:
             List of (train_indices, test_indices) tuples
         """
-        # TODO: Implement time-aware CV
-        # Walk-forward: Fixed train size, moving test window
-        # Expanding window: Growing train size, moving test window
-        # CRITICAL: Never use future data to predict past!
-        pass
+        n = len(y)
+        splits = []
+        
+        if self.test_size is None:
+            test_size = max(1, n // (self.n_splits + 1))
+        else:
+            test_size = self.test_size
+        
+        if self.cv_method == 'walk_forward':
+            # Fixed train size, moving test window
+            train_size = n - test_size * self.n_splits
+            if train_size < test_size:
+                train_size = test_size
+            
+            for i in range(self.n_splits):
+                train_end = train_size + i * test_size
+                test_start = train_end
+                test_end = min(test_start + test_size, n)
+                
+                if test_start >= n:
+                    break
+                
+                train_indices = np.arange(train_end)
+                test_indices = np.arange(test_start, test_end)
+                splits.append((train_indices, test_indices))
+        
+        elif self.cv_method == 'expanding_window':
+            # Growing train size, moving test window
+            initial_train_size = max(test_size, n - test_size * self.n_splits)
+            
+            for i in range(self.n_splits):
+                train_end = initial_train_size + i * test_size
+                test_start = train_end
+                test_end = min(test_start + test_size, n)
+                
+                if test_start >= n:
+                    break
+                
+                train_indices = np.arange(train_end)
+                test_indices = np.arange(test_start, test_end)
+                splits.append((train_indices, test_indices))
+        
+        return splits
     
     def evaluate(self, y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
         """
@@ -384,10 +521,39 @@ class TimeSeriesEvaluator:
         Returns:
             Dictionary of metrics
         """
-        # TODO: Compute time series metrics
-        # MAE, RMSE, MAPE, MASE (Mean Absolute Scaled Error)
-        # Handle division by zero in MAPE
-        pass
+        y_true = np.array(y_true)
+        y_pred = np.array(y_pred)
+        
+        # MAE (Mean Absolute Error)
+        mae = np.mean(np.abs(y_true - y_pred))
+        
+        # RMSE (Root Mean Squared Error)
+        rmse = np.sqrt(np.mean((y_true - y_pred) ** 2))
+        
+        # MAPE (Mean Absolute Percentage Error)
+        mask = y_true != 0
+        if mask.sum() > 0:
+            mape = np.mean(np.abs((y_true[mask] - y_pred[mask]) / y_true[mask])) * 100
+        else:
+            mape = np.nan
+        
+        # MASE (Mean Absolute Scaled Error)
+        # Uses naive forecast (shift by 1) as baseline
+        if len(y_true) > 1:
+            naive_forecast = np.abs(np.diff(y_true))
+            if naive_forecast.sum() > 0:
+                mase = np.mean(np.abs(y_true - y_pred)) / np.mean(naive_forecast)
+            else:
+                mase = np.nan
+        else:
+            mase = np.nan
+        
+        return {
+            'mae': mae,
+            'rmse': rmse,
+            'mape': mape,
+            'mase': mase
+        }
     
     def cross_validate(self, forecaster: TimeSeriesForecaster, 
                       y: pd.Series) -> Dict[str, List[float]]:
@@ -395,17 +561,38 @@ class TimeSeriesEvaluator:
         Perform time-aware cross-validation.
         
         Args:
-            forecaster: Fitted forecaster
+            forecaster: Forecaster instance (will be fitted on each fold)
             y: Time series data
         
         Returns:
             Dictionary of metrics across CV folds
         """
-        # TODO: Implement cross-validation
-        # Split data using time_series_cv_split
-        # Train and evaluate on each fold
-        # Return metrics for each fold
-        pass
+        splits = self.time_series_cv_split(y)
+        
+        all_metrics = {'mae': [], 'rmse': [], 'mape': [], 'mase': []}
+        
+        for train_indices, test_indices in splits:
+            # Split data
+            y_train = y.iloc[train_indices]
+            y_test = y.iloc[test_indices]
+            
+            # Fit forecaster on training data
+            forecaster.fit(y_train)
+            
+            # Predict on test data
+            n_periods = len(test_indices)
+            y_pred, _ = forecaster.predict(n_periods=n_periods)
+            
+            # Evaluate
+            metrics = self.evaluate(y_test.values, y_pred)
+            
+            # Store metrics
+            for key in all_metrics:
+                value = metrics.get(key, np.nan)
+                if not np.isnan(value):
+                    all_metrics[key].append(value)
+        
+        return all_metrics
 
 
 # Usage example
