@@ -122,6 +122,10 @@ Master designing scalable ML and data systems.
 
 **Practice:**
 - Study and solve problems in `03_system_design/`
+- Follow the 4-week preparation plan in `03_system_design/PREPARATION_PLAN.md`
+- Review interview techniques in `03_system_design/INTERVIEW_GUIDE.md`
+- Practice ML system challenges (LLM serving, training pipelines, feature stores)
+- Study case studies (ChatGPT, Netflix, Uber)
 
 ### Phase 5: Mock Interviews & Refinement (Week 5-6)
 Practice with real interview scenarios.
@@ -148,9 +152,25 @@ Practice with real interview scenarios.
 │   ├── medium/
 │   └── hard/
 ├── 03_system_design/                   # System design exercises
-│   ├── distributed_systems/
-│   ├── ml_systems/
-│   └── case_studies/
+│   ├── README.md                       # System design overview
+│   ├── PREPARATION_PLAN.md             # 4-week preparation roadmap
+│   ├── INTERVIEW_GUIDE.md              # Interview techniques and framework
+│   ├── ml_systems/                     # ML-specific system design challenges
+│   │   ├── challenge_01_llm_serving.md
+│   │   ├── challenge_02_model_training_pipeline.md
+│   │   ├── challenge_03_feature_store.md
+│   │   └── challenge_04_recommendation_system.md
+│   ├── distributed_systems/            # General distributed systems challenges
+│   │   ├── challenge_01_scalable_api.md
+│   │   ├── challenge_02_real_time_analytics.md
+│   │   └── challenge_03_distributed_cache.md
+│   ├── data_pipelines/                 # Data pipeline design challenges
+│   │   ├── challenge_01_etl_pipeline.md
+│   │   └── challenge_02_streaming_pipeline.md
+│   └── case_studies/                   # Real-world system case studies
+│       ├── case_study_01_chatgpt.md
+│       ├── case_study_02_netflix_recommendations.md
+│       └── case_study_03_uber_realtime.md
 └── resources/                          # Additional study materials
     ├── python_optimization.md
     ├── ml_concepts.md
@@ -164,7 +184,11 @@ Practice with real interview scenarios.
 1. **Start with Code Challenge exercises** - Build your Python fundamentals
 2. **Progress to ML exercises** - Apply ML concepts with production focus
 3. **Study System Design** - Learn to architect scalable systems
-4. **Practice under time pressure** - Simulate real interview conditions
+   - Read `03_system_design/PREPARATION_PLAN.md` for structured preparation
+   - Review `03_system_design/INTERVIEW_GUIDE.md` for interview techniques
+   - Practice challenges in each category (ML systems, distributed systems, data pipelines)
+   - Study case studies to learn from real-world architectures
+4. **Practice under time pressure** - Simulate real interview conditions (45-60 minutes per challenge)
 5. **Review and optimize** - After solving, always look for improvements
 
 ---
@@ -185,6 +209,8 @@ Practice with real interview scenarios.
 - [ ] Have Python environment ready
 - [ ] Familiar with Cursor IDE (for ML coding interview)
 - [ ] Review key concepts from each section
+- [ ] Review system design interview framework from `03_system_design/INTERVIEW_GUIDE.md`
+- [ ] Practice explaining system designs out loud
 
 ---
 
