@@ -28,6 +28,18 @@ This repository is organized into three core areas that mirror typical ML engine
 │   ├── distributed_systems/           # General distributed systems
 │   ├── data_pipelines/                # Data pipeline design
 │   └── case_studies/                  # Real-world case studies
+├── 04_nvidia_inference/               # NVIDIA inference engineer roadmap
+│   ├── week_01_pytorch/              # PyTorch 2.0 ecosystem
+│   ├── week_02_optimization/         # Model optimization
+│   ├── week_03_gpu_cuda/             # GPU architecture & CUDA
+│   ├── week_04_kernels/              # High-performance kernels
+│   ├── week_05_tensorrt/             # TensorRT & TRT-LLM
+│   ├── week_06_distributed/          # Distributed inference
+│   ├── week_07_profiling/            # Performance profiling
+│   ├── week_08_system_design/        # System architecture
+│   ├── practice_exercises/           # Hands-on coding exercises
+│   ├── interview_prep/               # Interview preparation
+│   └── resources/                    # Study resources
 └── resources/                         # Additional study materials
     ├── python_optimization.md
     ├── ml_concepts.md
@@ -98,6 +110,26 @@ Design scalable ML systems and distributed architectures.
 - Review `INTERVIEW_GUIDE.md` for interview techniques
 - Practice challenges in each category
 - Study case studies for real-world patterns
+
+### 5. NVIDIA Inference Engineer (`04_nvidia_inference/`)
+
+Specialized roadmap for NVIDIA inference optimization roles.
+
+**Topics:**
+- PyTorch 2.0 ecosystem (torch.compile, FX Graph)
+- Model optimization (quantization, pruning, sparsity)
+- GPU architecture & CUDA programming
+- High-performance kernels (Triton, CUTLASS, Flash Attention)
+- TensorRT & TRT-LLM
+- Distributed inference (tensor/pipeline parallelism)
+- Performance profiling (Nsight tools)
+- System design for inference platforms
+
+**Getting Started:**
+- Read `04_nvidia_inference/QUICK_START.md`
+- Choose your timeline (Intensive/Standard/Extended)
+- Start with Week 1: PyTorch Ecosystem
+- Complete practice exercises as you progress
 
 ## Preparation Roadmap
 
