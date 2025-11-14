@@ -1,142 +1,14 @@
-# 8090.ai Interview Preparation Roadmap
+# ML Engineer Interview Preparation
 
-## Company Overview
+A comprehensive repository for preparing for machine learning engineer interviews, covering coding challenges, ML implementations, and system design.
 
-**8090 Solutions Inc.** (co-founded by Chamath Palihapitiya) is developing **Software Factory**, an AI-first platform that transforms the software development lifecycle by delivering fully-managed and hosted software tailored for each customer.
+## Overview
 
-### Role: AI Improvement Engineer
+This repository is organized into three core areas that mirror typical ML engineer interview formats:
 
-**Key Responsibilities:**
-- Deploy and manage large language models (LLMs) and advanced ML systems in production
-- Build production-grade agentic systems
-- Test and ensure reliability of agent behaviors
-- Design measurement strategies for ML models
-- Develop tools for experimentation and model validation
-- Manage ML lifecycle (retraining, deployment, monitoring)
-- Handle model drift detection and mitigation
-
-**Required Skills:**
-- Experience with LLMs and advanced ML systems
-- Model evaluation strategies
-- Understanding of model drift
-- Proficiency in Python and ML tools
-- Production ML deployment experience
-
----
-
-## Interview Process
-
-### 1. Code Challenge (Python)
-**Format:** Hands-on coding interview
-**Focus:** Lower-level computing concepts and optimizations
-**AI Assistance:** Limited - syntax guidance and minor code completions only. Cannot ask how to tackle problems directly.
-**Key Areas:**
-- Memory management and optimization
-- Algorithm efficiency (time/space complexity)
-- Python internals (GIL, threading, concurrency)
-- Data structures and their implementations
-- Performance profiling and optimization
-
-### 2. Data/ML Coding Interview
-**Format:** Hands-on coding with AI assistance
-**Focus:** Code quality, technical clarity, design rationale
-**AI Assistance:** Fully allowed - use any tool to achieve highest quality results
-**Key Areas:**
-- Building ML models from scratch or using frameworks
-- Model evaluation and metrics
-- Feature engineering
-- Pipeline development
-- Code organization and best practices
-- Explaining design choices
-
-### 3. System Design Interview
-**Format:** Discussion-based (no hands-on coding)
-**Focus:** Technical aspects of developing and operationalizing distributed applications and data-intensive/ML systems
-**Key Areas:**
-- Scalable system architectures
-- Distributed systems design
-- ML system architecture
-- Data pipeline design
-- Model serving infrastructure
-- Monitoring and observability
-- Fault tolerance and reliability
-
----
-
-## Preparation Roadmap
-
-### Phase 1: Python Fundamentals & Optimization (Week 1-2)
-Focus on mastering Python internals and optimization techniques.
-
-**Topics:**
-- Memory management (garbage collection, memory profiling)
-- Data structures (when to use which, custom implementations)
-- Algorithms (sorting, searching, graph algorithms)
-- Concurrency (threading, multiprocessing, async/await)
-- Python internals (GIL, bytecode, C extensions)
-- Performance profiling (cProfile, line_profiler, memory_profiler)
-
-**Practice:**
-- Start with exercises in `01_code_challenge/`
-
-### Phase 2: Machine Learning Foundations (Week 2-3)
-Solidify ML knowledge with focus on production deployment.
-
-**Topics:**
-- Supervised and unsupervised learning algorithms
-- Model evaluation metrics and techniques
-- Feature engineering and selection
-- Model optimization and hyperparameter tuning
-- Cross-validation strategies
-- Handling imbalanced data
-
-**Practice:**
-- Complete exercises in `02_data_ml_coding/`
-
-### Phase 3: Production ML Systems (Week 3-4)
-Learn how to operationalize ML models in production.
-
-**Topics:**
-- ML lifecycle management
-- Model versioning and deployment
-- A/B testing for ML models
-- Model monitoring and drift detection
-- Model serving architectures
-- Experiment tracking and MLflow
-
-**Practice:**
-- Advanced exercises in `02_data_ml_coding/`
-- Review production patterns in `03_system_design/`
-
-### Phase 4: System Design (Week 4-5)
-Master designing scalable ML and data systems.
-
-**Topics:**
-- Distributed systems fundamentals
-- Database design (SQL and NoSQL)
-- Caching strategies
-- Load balancing and scaling
-- Message queues and event streaming
-- ML system design patterns
-- Real-time vs batch processing
-
-**Practice:**
-- Study and solve problems in `03_system_design/`
-- Follow the 4-week preparation plan in `03_system_design/PREPARATION_PLAN.md`
-- Review interview techniques in `03_system_design/INTERVIEW_GUIDE.md`
-- Practice ML system challenges (LLM serving, training pipelines, feature stores)
-- Study case studies (ChatGPT, Netflix, Uber)
-
-### Phase 5: Mock Interviews & Refinement (Week 5-6)
-Practice with real interview scenarios.
-
-**Activities:**
-- Time yourself solving problems (45-60 minutes)
-- Practice explaining your thought process
-- Review and optimize your solutions
-- Mock interview with peers or mentors
-
----
+1. **Code Challenges** - Python fundamentals, optimization, and performance
+2. **Data/ML Coding** - ML model implementation, pipelines, and production code
+3. **System Design** - Scalable ML systems, distributed systems, and data pipelines
 
 ## Repository Structure
 
@@ -144,81 +16,185 @@ Practice with real interview scenarios.
 .
 ├── README.md                           # This file
 ├── 01_code_challenge/                  # Python coding exercises
-│   ├── easy/
-│   ├── medium/
-│   └── hard/
-├── 02_data_ml_coding/                  # ML coding exercises
-│   ├── easy/
-│   ├── medium/
-│   └── hard/
-├── 03_system_design/                   # System design exercises
-│   ├── README.md                       # System design overview
-│   ├── PREPARATION_PLAN.md             # 4-week preparation roadmap
-│   ├── INTERVIEW_GUIDE.md              # Interview techniques and framework
-│   ├── ml_systems/                     # ML-specific system design challenges
-│   │   ├── challenge_01_llm_serving.md
-│   │   ├── challenge_02_model_training_pipeline.md
-│   │   ├── challenge_03_feature_store.md
-│   │   └── challenge_04_recommendation_system.md
-│   ├── distributed_systems/            # General distributed systems challenges
-│   │   ├── challenge_01_scalable_api.md
-│   │   ├── challenge_02_real_time_analytics.md
-│   │   └── challenge_03_distributed_cache.md
-│   ├── data_pipelines/                 # Data pipeline design challenges
-│   │   ├── challenge_01_etl_pipeline.md
-│   │   └── challenge_02_streaming_pipeline.md
-│   └── case_studies/                   # Real-world system case studies
-│       ├── case_study_01_chatgpt.md
-│       ├── case_study_02_netflix_recommendations.md
-│       └── case_study_03_uber_realtime.md
-└── resources/                          # Additional study materials
+│   ├── easy/                          # Fundamental concepts
+│   ├── medium/                        # Intermediate optimization
+│   └── hard/                          # Advanced challenges
+├── 02_data_ml_coding/                 # ML coding exercises
+│   ├── easy/                          # Basic ML implementations
+│   ├── medium/                        # Production ML pipelines
+│   └── hard/                          # Advanced ML systems
+├── 03_system_design/                  # System design exercises
+│   ├── ml_systems/                    # ML-specific system design
+│   ├── distributed_systems/           # General distributed systems
+│   ├── data_pipelines/                # Data pipeline design
+│   └── case_studies/                  # Real-world case studies
+└── resources/                         # Additional study materials
     ├── python_optimization.md
     ├── ml_concepts.md
     └── system_design_patterns.md
 ```
 
----
+## Getting Started
 
-## How to Use This Repository
+### 1. Setup Environment
 
-1. **Start with Code Challenge exercises** - Build your Python fundamentals
-2. **Progress to ML exercises** - Apply ML concepts with production focus
-3. **Study System Design** - Learn to architect scalable systems
-   - Read `03_system_design/PREPARATION_PLAN.md` for structured preparation
-   - Review `03_system_design/INTERVIEW_GUIDE.md` for interview techniques
-   - Practice challenges in each category (ML systems, distributed systems, data pipelines)
-   - Study case studies to learn from real-world architectures
-4. **Practice under time pressure** - Simulate real interview conditions (45-60 minutes per challenge)
-5. **Review and optimize** - After solving, always look for improvements
+```bash
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
----
+# Install dependencies
+pip install -r requirements.txt
+```
+
+See [SETUP.md](SETUP.md) for detailed setup instructions.
+
+### 2. Code Challenges (`01_code_challenge/`)
+
+Focus on Python fundamentals, memory optimization, and algorithm efficiency.
+
+**Topics:**
+- Memory management and profiling
+- Data structure optimization
+- Concurrency and parallelism
+- Algorithm complexity analysis
+- Performance tuning
+
+**Getting Started:**
+- Start with `easy/` exercises to build fundamentals
+- Progress through `medium/` and `hard/` as you improve
+- Run `python test_all.py` to verify your solutions
+
+### 3. Data/ML Coding (`02_data_ml_coding/`)
+
+Build ML models, pipelines, and production-ready code.
+
+**Topics:**
+- Implementing ML algorithms from scratch
+- Model evaluation and metrics
+- Feature engineering pipelines
+- Production ML workflows
+- Deep learning pipelines (PyTorch)
+
+**Getting Started:**
+- Work through exercises in order of difficulty
+- Focus on code quality and design rationale
+- Use AI assistance as you would in interviews
+- Review solutions after attempting each exercise
+
+### 4. System Design (`03_system_design/`)
+
+Design scalable ML systems and distributed architectures.
+
+**Topics:**
+- ML system architecture (serving, training, feature stores)
+- Distributed systems fundamentals
+- Data pipeline design (ETL, streaming)
+- Scalability and reliability patterns
+- Operational concerns (monitoring, debugging)
+
+**Getting Started:**
+- Read `QUICK_START.md` for essential framework
+- Review `INTERVIEW_GUIDE.md` for interview techniques
+- Practice challenges in each category
+- Study case studies for real-world patterns
+
+## Preparation Roadmap
+
+### Week 1-2: Python Fundamentals
+- Complete `01_code_challenge/` exercises
+- Focus on memory optimization and performance
+- Master Python internals (GIL, concurrency, profiling)
+
+### Week 3: ML Implementation
+- Work through `02_data_ml_coding/` exercises
+- Build models from scratch
+- Practice production ML workflows
+- Emphasize code quality and design
+
+### Week 4: System Design
+- Study `03_system_design/` materials
+- Practice designing ML systems
+- Learn distributed systems patterns
+- Review case studies
+
+### Week 5: Mock Practice
+- Time yourself solving problems (45-60 minutes)
+- Practice explaining your thought process
+- Review and optimize solutions
+- Conduct mock interviews
+
+## Key Focus Areas
+
+### Code Challenges
+- **Memory efficiency**: Minimize memory footprint
+- **Performance**: Optimize time complexity
+- **Python internals**: Understand GIL, concurrency, profiling
+- **Best practices**: Clean, maintainable code
+
+### ML Coding
+- **Code quality**: Production-ready, well-documented code
+- **Design rationale**: Explain your choices
+- **ML fundamentals**: Deep understanding of algorithms
+- **Production concerns**: Scalability, maintainability, edge cases
+
+### System Design
+- **Architecture**: Scalable, reliable system design
+- **Trade-offs**: Analyze pros/cons of approaches
+- **Scale**: Design for growth (1 user → millions)
+- **Operations**: Monitoring, debugging, failure scenarios
 
 ## Difficulty Levels
 
 - **Easy**: Fundamental concepts, straightforward implementations
 - **Medium**: Requires deeper understanding, may involve optimization
-- **Hard**: Complex problems requiring advanced techniques and careful design
+- **Hard**: Complex problems requiring advanced techniques
 
----
+## Testing Your Solutions
 
-## Interview Day Checklist
+Most exercises include automated test suites:
 
-- [ ] Test Zoom desktop client (required for remote control)
-- [ ] Ensure stable internet connection
-- [ ] Camera ready to be turned on
-- [ ] Have Python environment ready
-- [ ] Familiar with Cursor IDE (for ML coding interview)
-- [ ] Review key concepts from each section
-- [ ] Review system design interview framework from `03_system_design/INTERVIEW_GUIDE.md`
-- [ ] Practice explaining system designs out loud
+```bash
+# Test all exercises in a directory
+python test_all.py
 
----
+# Test a specific exercise
+python test_all.py --exercise 1
+```
 
 ## Additional Resources
 
-- **Python Optimization**: [Python Performance Tips](https://wiki.python.org/moin/PythonSpeed/PerformanceTips)
-- **ML System Design**: [Designing Machine Learning Systems](https://www.oreilly.com/library/view/designing-machine-learning/9781491920886/)
-- **System Design**: [System Design Primer](https://github.com/donnemartin/system-design-primer)
+- **Python Optimization**: `resources/python_optimization.md`
+- **ML Concepts**: `resources/ml_concepts.md`
+- **System Design Patterns**: `resources/system_design_patterns.md`
+
+## Interview Tips
+
+### Code Challenges
+- Start with correctness, then optimize
+- Explain your optimization choices
+- Consider time and space complexity
+- Use profiling tools to measure improvements
+
+### ML Coding
+- Write clean, production-ready code
+- Document your design decisions
+- Consider edge cases and error handling
+- Explain trade-offs in your approach
+
+### System Design
+- Always clarify requirements first
+- Start simple, then iterate
+- Think out loud - explain your reasoning
+- Discuss trade-offs for every decision
+- Consider operational concerns (monitoring, debugging)
+
+## Contributing
+
+This repository is designed for personal interview preparation. Feel free to:
+- Add your own solutions
+- Create additional exercises
+- Improve documentation
+- Share feedback
 
 Good luck with your interviews! 🚀
-
