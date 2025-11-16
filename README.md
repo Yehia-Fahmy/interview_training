@@ -133,7 +133,7 @@ Specialized roadmap for NVIDIA inference optimization roles.
 - Focus on PyTorch 2.0, quantization, and system design (80% of interview)
 
 **For Comprehensive Learning (4-8 weeks):**
-- Read `04_nvidia_inference/QUICK_START.md`
+- Read `04_nvidia_inference/roadmap.md` for detailed plan
 - Choose your timeline (Intensive/Standard/Extended)
 - Start with Week 1: PyTorch Ecosystem
 - Complete practice exercises as you progress

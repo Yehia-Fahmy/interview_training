@@ -29,7 +29,6 @@ This focused approach prioritizes high-ROI topics (PyTorch 2.0 ecosystem, quanti
 ├── README.md                      # This file - overview and navigation
 ├── FOCUSED_INTERVIEW_PREP.md      # ⭐ 1-week focused prep plan (START HERE)
 ├── FOCUSED_EXERCISES.md           # ⭐ Top 5 must-do exercises
-├── QUICK_START.md                 # Quick overview of comprehensive plan
 ├── roadmap.md                     # Complete 4-8 week roadmap
 ├── week_01_pytorch/              # PyTorch 2.0 ecosystem
 ├── week_02_optimization/         # Model optimization techniques
@@ -132,7 +131,7 @@ Before your interview, ensure you can:
 4. **Review** system design template and practice
 
 ### For Comprehensive Learning (4-8 weeks):
-1. Read `roadmap.md` for complete details
+1. Read `roadmap.md` for detailed week-by-week plan
 2. Start with `week_01_pytorch/README.md`
 3. Complete practice exercises as you go
 4. Review `interview_prep/` materials before your interview
