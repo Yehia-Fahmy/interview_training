@@ -54,6 +54,8 @@ def evaluate_accuracy(model: nn.Module, test_loader: DataLoader, device: torch.d
     """
     # TODO: Implement accuracy evaluation
     # Hint: Set model to eval mode, iterate through test_loader, compute accuracy
+    model.eval()
+    # TODO: Complete implementation
     pass
 
 
@@ -77,8 +79,35 @@ def measure_inference_time(
     """
     # TODO: Implement inference time measurement
     # Hint: Warmup first, then time multiple runs, average the results
-    # Remember to synchronize CUDA if using GPU
-    pass
+    # Remember to synchronize GPU (CUDA or MPS) if using GPU
+    model.eval()
+    device = input_tensor.device
+    
+    # Warmup
+    with torch.no_grad():
+        for _ in range(warmup_runs):
+            _ = model(input_tensor)
+    
+    # Synchronize if GPU
+    if device.type == 'cuda':
+        torch.cuda.synchronize()
+    elif device.type == 'mps':
+        torch.mps.synchronize()
+    
+    # Time multiple runs
+    start_time = time.perf_counter()
+    with torch.no_grad():
+        for _ in range(num_runs):
+            _ = model(input_tensor)
+    
+    # Synchronize if GPU
+    if device.type == 'cuda':
+        torch.cuda.synchronize()
+    elif device.type == 'mps':
+        torch.mps.synchronize()
+    
+    elapsed = time.perf_counter() - start_time
+    return (elapsed / num_runs) * 1000  # Convert to milliseconds
 
 
 def measure_memory_usage(model: nn.Module, input_tensor: torch.Tensor) -> Dict[str, float]:
@@ -93,9 +122,33 @@ def measure_memory_usage(model: nn.Module, input_tensor: torch.Tensor) -> Dict[s
         Dictionary with 'model_size_mb' and 'peak_memory_mb'
     """
     # TODO: Implement memory measurement
-    # Hint: Use torch.cuda.memory_allocated() if on GPU
+    # Hint: Use device-specific memory APIs for GPU (CUDA or MPS)
     # Calculate model size by summing parameter sizes
-    pass
+    device = input_tensor.device
+    
+    # Calculate model size
+    model_size = sum(p.numel() * p.element_size() for p in model.parameters())
+    buffer_size = sum(b.numel() * b.element_size() for b in model.buffers())
+    total_model_size = model_size + buffer_size
+    
+    result = {
+        'model_size_mb': total_model_size / (1024 * 1024),
+        'peak_memory_mb': 0.0
+    }
+    
+    # GPU memory measurement (CUDA only, MPS doesn't expose this API)
+    if device.type == 'cuda':
+        torch.cuda.empty_cache()
+        torch.cuda.reset_peak_memory_stats(device)
+        initial_memory = torch.cuda.memory_allocated(device)
+        
+        with torch.no_grad():
+            _ = model(input_tensor)
+        
+        peak_memory = torch.cuda.max_memory_allocated(device)
+        result['peak_memory_mb'] = peak_memory / (1024 * 1024)
+    
+    return result
 
 
 def prepare_calibration_data(test_loader: DataLoader, num_samples: int = 100):
@@ -192,13 +245,20 @@ def compare_models(
     return results
 
 
+
 def main():
     """Main function to run the quantization challenge"""
     print("=" * 70)
     print("Challenge 1: Post-Training Quantization")
     print("=" * 70)
     
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # Auto-detect best device: MPS > CUDA > CPU
+    if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        device = torch.device('mps')
+    elif torch.cuda.is_available():
+        device = torch.device('cuda')
+    else:
+        device = torch.device('cpu')
     print(f"Using device: {device}")
     
     # Create or load a pre-trained model

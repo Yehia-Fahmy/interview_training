@@ -19,7 +19,13 @@ import pytest
 
 @pytest.fixture
 def device():
-    return torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # Auto-detect best device: MPS > CUDA > CPU
+    if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        return torch.device('mps')
+    elif torch.cuda.is_available():
+        return torch.device('cuda')
+    else:
+        return torch.device('cpu')
 
 
 @pytest.fixture
@@ -62,8 +68,10 @@ def test_measure_inference_time(model, device):
 
 def test_measure_memory_usage(model, device):
     """Test memory usage measurement"""
-    if not torch.cuda.is_available():
-        pytest.skip("Memory measurement requires CUDA")
+    # Memory measurement detailed stats only available on CUDA
+    # MPS and CPU will return 0.0 for peak_memory_mb, which is acceptable
+    if device.type not in ('cuda', 'mps', 'cpu'):
+        pytest.skip("Memory measurement requires GPU or CPU")
     
     dummy_input = torch.randn(1, 3, 32, 32).to(device)
     memory_stats = measure_memory_usage(model, dummy_input)
@@ -143,8 +151,10 @@ def test_quantization_improves_speed(model, test_data, device):
 
 def test_quantization_reduces_memory(model, test_data, device):
     """Test that quantization reduces model memory footprint"""
-    if not torch.cuda.is_available():
-        pytest.skip("Memory test requires CUDA")
+    # Detailed memory tracking only available on CUDA
+    # For MPS and CPU, we can still test model size reduction
+    if device.type != 'cuda':
+        pytest.skip("Detailed memory tracking requires CUDA (model size comparison still works)")
     
     calibration_data = prepare_calibration_data(test_data, num_samples=20)
     quantized_model = apply_ptq(model, calibration_data, device)
