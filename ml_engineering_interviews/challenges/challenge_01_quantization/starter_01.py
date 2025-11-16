@@ -5,6 +5,7 @@ Starter Code
 Implement PTQ for a pre-trained model and measure accuracy-speed trade-offs.
 """
 
+from cgi import test
 import torch
 import torch.nn as nn
 import torch.quantization as quant
@@ -52,11 +53,18 @@ def evaluate_accuracy(model: nn.Module, test_loader: DataLoader, device: torch.d
     Returns:
         Accuracy percentage
     """
-    # TODO: Implement accuracy evaluation
-    # Hint: Set model to eval mode, iterate through test_loader, compute accuracy
     model.eval()
-    # TODO: Complete implementation
-    pass
+    total, correct = 0, 0
+    for inputs, labels in test_loader:
+        inputs = inputs.to(device)
+        labels = labels.to(device)
+        outputs = model(inputs)
+
+        for i in range(len(inputs)):
+            if labels[i] == outputs[i]: correct += 1
+            total += 1
+
+    return 100.0 * correct / total
 
 
 def measure_inference_time(
@@ -77,9 +85,6 @@ def measure_inference_time(
     Returns:
         Average inference time in milliseconds
     """
-    # TODO: Implement inference time measurement
-    # Hint: Warmup first, then time multiple runs, average the results
-    # Remember to synchronize GPU (CUDA or MPS) if using GPU
     model.eval()
     device = input_tensor.device
     
@@ -164,7 +169,15 @@ def prepare_calibration_data(test_loader: DataLoader, num_samples: int = 100):
     """
     # TODO: Extract calibration data from test_loader
     # Hint: Collect input tensors (not labels) up to num_samples
-    pass
+    input_tensors = []
+
+    for inputs, _ in test_loader:
+        for input_tensor in inputs:
+            if len(input_tensors) >= num_samples:
+                return input_tensors
+
+            input_tensors.append(input_tensor.unsqueeze(0))
+    return input_tensors
 
 
 def apply_ptq(
