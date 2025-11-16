@@ -113,23 +113,28 @@ def measure_inference_time(
     """
     model.eval()
     
+    device = input_tensor.device
+    
     # Warmup to ensure stable measurements
     with torch.no_grad():
         for _ in range(warmup_runs):
             _ = model(input_tensor)
     
-    # Synchronize if CUDA
-    if input_tensor.is_cuda:
+    # Synchronize if GPU
+    if device.type == 'cuda':
         torch.cuda.synchronize()
+    elif device.type == 'mps':
+        torch.mps.synchronize()
     
     # Measure multiple runs
     times = []
-    start_event = torch.cuda.Event(enable_timing=True) if input_tensor.is_cuda else None
-    end_event = torch.cuda.Event(enable_timing=True) if input_tensor.is_cuda else None
+    use_cuda_events = device.type == 'cuda'
+    start_event = torch.cuda.Event(enable_timing=True) if use_cuda_events else None
+    end_event = torch.cuda.Event(enable_timing=True) if use_cuda_events else None
     
     with torch.no_grad():
         for _ in range(num_runs):
-            if input_tensor.is_cuda:
+            if use_cuda_events and start_event is not None and end_event is not None:
                 start_event.record()
                 _ = model(input_tensor)
                 end_event.record()
@@ -138,6 +143,9 @@ def measure_inference_time(
             else:
                 start = time.perf_counter()
                 _ = model(input_tensor)
+                # Synchronize for MPS
+                if device.type == 'mps':
+                    torch.mps.synchronize()
                 elapsed = (time.perf_counter() - start) * 1000  # convert to ms
                 times.append(elapsed)
     
@@ -180,21 +188,25 @@ def measure_memory_usage(
     model_size = param_size + buffer_size
     stats['model_size_mb'] = model_size / (1024 * 1024)
     
-    if torch.cuda.is_available() and input_tensor.is_cuda:
+    device = input_tensor.device
+    
+    # GPU memory measurement (CUDA only, MPS doesn't expose this API)
+    if device.type == 'cuda':
         # Clear cache and reset stats
         torch.cuda.empty_cache()
-        torch.cuda.reset_peak_memory_stats()
+        torch.cuda.reset_peak_memory_stats(device)
         
-        initial_memory = torch.cuda.memory_allocated()
+        initial_memory = torch.cuda.memory_allocated(device)
         
         # Run forward pass
         with torch.no_grad():
             _ = model(input_tensor)
         
-        peak_memory = torch.cuda.max_memory_allocated()
+        peak_memory = torch.cuda.max_memory_allocated(device)
         stats['peak_memory_mb'] = peak_memory / (1024 * 1024)
         stats['activation_memory_mb'] = (peak_memory - initial_memory) / (1024 * 1024) if include_activations else 0.0
     else:
+        # MPS and CPU don't expose detailed memory tracking
         stats['peak_memory_mb'] = 0.0
         stats['activation_memory_mb'] = 0.0
     
@@ -398,7 +410,13 @@ def main():
     print("Challenge 1: Post-Training Quantization - Ideal Implementation")
     print("=" * 70)
     
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # Auto-detect best device: MPS > CUDA > CPU
+    if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        device = torch.device('mps')
+    elif torch.cuda.is_available():
+        device = torch.device('cuda')
+    else:
+        device = torch.device('cpu')
     print(f"Using device: {device}")
     
     # Create model

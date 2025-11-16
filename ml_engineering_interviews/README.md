@@ -174,6 +174,13 @@ ml_engineering_interviews/
     └── question_02_rag_system.md             # EvenUp focus
 ```
 
+### GPU Acceleration Support
+
+All ML training code automatically detects and uses the best available device:
+- **MPS (M-series GPU)** - Apple Silicon acceleration (M1, M2, M3, etc.) - priority
+- **CUDA** - NVIDIA GPU acceleration
+- **CPU** - Fallback when no GPU available
+
 ---
 
 ## Coding Challenges
