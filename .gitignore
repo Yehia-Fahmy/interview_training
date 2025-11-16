@@ -49,3 +49,6 @@ model_registry/
 Thumbs.db
 
 *.bin
+
+# Warp project rules
+WARP.md
