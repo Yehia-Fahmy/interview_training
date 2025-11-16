@@ -15,8 +15,8 @@ pytest-cov>=4.1.0
 # Optional: Advanced ML (for hard exercises)
 # Uncomment if needed:
 torch>=2.0.0
-# transformers>=4.30.0
-# sentence-transformers>=2.2.0
+transformers>=4.30.0
+sentence-transformers>=2.2.0
 
 # Optional: LLM Evaluation (for hard exercises)
 # Uncomment if needed:
