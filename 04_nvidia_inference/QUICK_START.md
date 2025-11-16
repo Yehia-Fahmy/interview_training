@@ -2,7 +2,19 @@
 
 Get started with NVIDIA Inference Engineer interview preparation in 5 minutes.
 
-## Choose Your Timeline
+## 👉 Interview Preparation (1-2 weeks)?
+
+**If you're preparing for an upcoming interview, use the focused guide instead:**
+
+- **Read**: `FOCUSED_INTERVIEW_PREP.md` - Critical analysis of what NVIDIA actually tests
+- **Practice**: `FOCUSED_EXERCISES.md` - Top 5 must-do exercises
+- **Focus**: PyTorch 2.0 ecosystem, quantization, system design (80% of interview)
+
+The guide below is for comprehensive learning over 4-8 weeks.
+
+---
+
+## Choose Your Timeline (Comprehensive Learning)
 
 ### Intensive (2 weeks) - For experienced candidates
 - **Week 1**: PyTorch ecosystem, optimization techniques, CUDA basics

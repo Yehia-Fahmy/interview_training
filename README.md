@@ -126,6 +126,13 @@ Specialized roadmap for NVIDIA inference optimization roles.
 - System design for inference platforms
 
 **Getting Started:**
+
+**For Interview Prep (1-2 weeks):**
+- ⭐ Read `04_nvidia_inference/FOCUSED_INTERVIEW_PREP.md` - Critical analysis of what matters
+- ⭐ Complete exercises 1-5 from `FOCUSED_EXERCISES.md`
+- Focus on PyTorch 2.0, quantization, and system design (80% of interview)
+
+**For Comprehensive Learning (4-8 weeks):**
 - Read `04_nvidia_inference/QUICK_START.md`
 - Choose your timeline (Intensive/Standard/Extended)
 - Start with Week 1: PyTorch Ecosystem

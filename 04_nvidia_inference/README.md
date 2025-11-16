@@ -4,7 +4,17 @@
 
 Focused preparation plan for **Senior Deep Learning Software Engineer** role specializing in inference optimization, GPU programming, and automated model deployment at NVIDIA.
 
-## Quick Start
+## 🚀 Quick Start (Recommended)
+
+**For interview preparation with limited time (1-2 weeks):**
+
+1. **Start here**: Read `FOCUSED_INTERVIEW_PREP.md` - Critical analysis of what NVIDIA actually tests
+2. **Practice**: Complete exercises 1-5 from `FOCUSED_EXERCISES.md` (PyTorch 2.0 + optimization)
+3. **Review**: Prepare 2-3 technical deep dives with concrete metrics
+
+This focused approach prioritizes high-ROI topics (PyTorch 2.0 ecosystem, quantization, system design) over exhaustive coverage.
+
+## Alternative: Comprehensive Preparation (4-8 weeks)
 
 1. **Choose your timeline**: Intensive (2 weeks), Standard (4 weeks), or Extended (6-8 weeks)
 2. **Start with Week 1**: PyTorch Ecosystem & Model Graph Extraction
@@ -16,19 +26,22 @@ Focused preparation plan for **Senior Deep Learning Software Engineer** role spe
 
 ```
 04_nvidia_inference/
-├── README.md                    # This file - overview and navigation
-├── roadmap.md                   # Complete roadmap with all details
-├── week_01_pytorch/            # PyTorch 2.0 ecosystem
-├── week_02_optimization/       # Model optimization techniques
-├── week_03_gpu_cuda/           # GPU architecture & CUDA
-├── week_04_kernels/            # High-performance kernels
-├── week_05_tensorrt/           # TensorRT & TRT-LLM
-├── week_06_distributed/         # Distributed inference
-├── week_07_profiling/          # Performance profiling
-├── week_08_system_design/      # Software architecture
-├── practice_exercises/         # Hands-on coding exercises
-├── interview_prep/             # Interview preparation materials
-└── resources/                  # Study resources and references
+├── README.md                      # This file - overview and navigation
+├── FOCUSED_INTERVIEW_PREP.md      # ⭐ 1-week focused prep plan (START HERE)
+├── FOCUSED_EXERCISES.md           # ⭐ Top 5 must-do exercises
+├── QUICK_START.md                 # Quick overview of comprehensive plan
+├── roadmap.md                     # Complete 4-8 week roadmap
+├── week_01_pytorch/              # PyTorch 2.0 ecosystem
+├── week_02_optimization/         # Model optimization techniques
+├── week_03_gpu_cuda/             # GPU architecture & CUDA
+├── week_04_kernels/              # High-performance kernels
+├── week_05_tensorrt/             # TensorRT & TRT-LLM
+├── week_06_distributed/           # Distributed inference
+├── week_07_profiling/            # Performance profiling
+├── week_08_system_design/        # Software architecture
+├── practice_exercises/           # Hands-on coding exercises
+├── interview_prep/               # Interview preparation materials
+└── resources/                    # Study resources and references
 ```
 
 ## Core Technical Areas
@@ -112,6 +125,13 @@ Before your interview, ensure you can:
 
 ## Next Steps
 
+### For Interview Preparation (1-2 weeks):
+1. **Read** `FOCUSED_INTERVIEW_PREP.md` - Understand what NVIDIA actually tests
+2. **Practice** exercises 1-5 from `FOCUSED_EXERCISES.md`
+3. **Prepare** 2-3 technical deep dives with metrics
+4. **Review** system design template and practice
+
+### For Comprehensive Learning (4-8 weeks):
 1. Read `roadmap.md` for complete details
 2. Start with `week_01_pytorch/README.md`
 3. Complete practice exercises as you go
