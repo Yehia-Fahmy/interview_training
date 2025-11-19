@@ -5,13 +5,97 @@ Starter Code
 Implement PTQ for a pre-trained model and measure accuracy-speed trade-offs.
 """
 
-from cgi import test
 import torch
 import torch.nn as nn
 import torch.quantization as quant
-from torch.utils.data import DataLoader
+from torch.quantization import quantize_fx
+from torch.utils.data import DataLoader, Subset
+from torchvision import datasets, transforms
 from typing import Tuple, Dict
 import time
+import os
+import platform
+
+
+def load_imagenet_dataset(data_dir: str = None, batch_size: int = 16, num_classes: int = 10):
+    """
+    Load ImageNet dataset resized to 32x32 for compatibility with SimpleCNN.
+    Automatically downloads and places dataset in current directory if not present.
+    
+    Args:
+        data_dir: Directory where ImageNet data is stored. If None, uses './imagenet' in current directory.
+        batch_size: Batch size for DataLoader
+        num_classes: Number of classes to use (10 for SimpleCNN compatibility)
+    
+    Returns:
+        DataLoader for ImageNet validation set
+    """
+    # Define transforms: resize to 32x32 to match SimpleCNN input size
+    transform = transforms.Compose([
+        transforms.Resize(32),
+        transforms.CenterCrop(32),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+    
+    # Default ImageNet directory: use current directory
+    if data_dir is None:
+        # Use './imagenet' in current working directory
+        data_dir = os.path.join(os.getcwd(), 'imagenet')
+    
+    # Create directory if it doesn't exist
+    os.makedirs(data_dir, exist_ok=True)
+    
+    # Check if ImageNet is already downloaded
+    val_dir = os.path.join(data_dir, 'val')
+    dataset_exists = os.path.exists(val_dir) and len(os.listdir(val_dir)) > 0
+    
+    if not dataset_exists:
+        print(f"ImageNet dataset not found at {data_dir}.")
+        print("Attempting to download ImageNet...")
+        print("\nNote: ImageNet requires manual registration at http://www.image-net.org/")
+        print("For automatic download, you may need to:")
+        print("1. Register at http://www.image-net.org/")
+        print("2. Download the ILSVRC2012 validation set")
+        print("3. Extract it to:", val_dir)
+        print("\nTrying to load dataset (will fail if not downloaded)...")
+    
+    # Load ImageNet validation set
+    try:
+        dataset = datasets.ImageNet(root=data_dir, split='val', transform=transform)
+    except (FileNotFoundError, RuntimeError, AttributeError):
+        # Fallback: try ImageFolder if ImageNet class doesn't work
+        if os.path.exists(val_dir):
+            dataset = datasets.ImageFolder(root=val_dir, transform=transform)
+        else:
+            raise FileNotFoundError(
+                f"ImageNet dataset not found at {data_dir}. "
+                f"Please download ImageNet from http://www.image-net.org/ "
+                f"and extract the validation set to: {val_dir}"
+            )
+    
+    # If we need to limit to 10 classes, create a subset
+    # Map labels to 0-9 range for SimpleCNN compatibility
+    if hasattr(dataset, 'classes') and len(dataset.classes) > num_classes:
+        # Get indices for first num_classes
+        class_indices = {}
+        samples = dataset.samples if hasattr(dataset, 'samples') else dataset.imgs
+        for idx, (_, label) in enumerate(samples):
+            if label not in class_indices:
+                class_indices[label] = []
+            class_indices[label].append(idx)
+        
+        # Take first num_classes
+        selected_indices = []
+        for label in sorted(class_indices.keys())[:num_classes]:
+            selected_indices.extend(class_indices[label])
+        
+        dataset = Subset(dataset, selected_indices)
+    
+    # Create DataLoader
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=0)
+    
+    return dataloader
 
 
 class SimpleCNN(nn.Module):
@@ -54,14 +138,26 @@ def evaluate_accuracy(model: nn.Module, test_loader: DataLoader, device: torch.d
         Accuracy percentage
     """
     model.eval()
+    # Check if model is quantized (quantized models must stay on CPU)
+    # FX quantized models have 'qconfig' attribute or contain 'quantized' in module names
+    is_quantized = (
+        hasattr(model, 'qconfig') and model.qconfig is not None
+    ) or any('quantized' in str(type(m)).lower() for m in model.modules())
+    
     total, correct = 0, 0
     for inputs, labels in test_loader:
-        inputs = inputs.to(device)
-        labels = labels.to(device)
+        # Quantized models must use CPU, others use the specified device
+        if is_quantized:
+            inputs = inputs.to('cpu')
+            labels = labels.to('cpu')
+        else:
+            inputs = inputs.to(device)
+            labels = labels.to(device)
         outputs = model(inputs)
+        _, predicted = torch.max(outputs.data, 1)
 
         for i in range(len(inputs)):
-            if labels[i] == outputs[i]: correct += 1
+            if labels[i] == predicted[i]: correct += 1
             total += 1
 
     return 100.0 * correct / total
@@ -86,7 +182,18 @@ def measure_inference_time(
         Average inference time in milliseconds
     """
     model.eval()
-    device = input_tensor.device
+    # Check if model is quantized (quantized models must stay on CPU)
+    # FX quantized models have 'qconfig' attribute or contain 'quantized' in module names
+    is_quantized = (
+        hasattr(model, 'qconfig') and model.qconfig is not None
+    ) or any('quantized' in str(type(m)).lower() for m in model.modules())
+    
+    # Quantized models must use CPU
+    if is_quantized:
+        input_tensor = input_tensor.to('cpu')
+        device = torch.device('cpu')
+    else:
+        device = input_tensor.device
     
     # Warmup
     with torch.no_grad():
@@ -126,10 +233,18 @@ def measure_memory_usage(model: nn.Module, input_tensor: torch.Tensor) -> Dict[s
     Returns:
         Dictionary with 'model_size_mb' and 'peak_memory_mb'
     """
-    # TODO: Implement memory measurement
-    # Hint: Use device-specific memory APIs for GPU (CUDA or MPS)
-    # Calculate model size by summing parameter sizes
-    device = input_tensor.device
+    # Check if model is quantized (quantized models must stay on CPU)
+    # FX quantized models have 'qconfig' attribute or contain 'quantized' in module names
+    is_quantized = (
+        hasattr(model, 'qconfig') and model.qconfig is not None
+    ) or any('quantized' in str(type(m)).lower() for m in model.modules())
+    
+    # Quantized models must use CPU
+    if is_quantized:
+        input_tensor = input_tensor.to('cpu')
+        device = torch.device('cpu')
+    else:
+        device = input_tensor.device
     
     # Calculate model size
     model_size = sum(p.numel() * p.element_size() for p in model.parameters())
@@ -194,17 +309,62 @@ def apply_ptq(
     Returns:
         Quantized model
     """
-    # TODO: Implement PTQ using torch.quantization
-    # Steps:
-    # 1. Prepare model for quantization (set qconfig)
-    # 2. Prepare model (insert observers)
-    # 3. Calibrate with calibration_data
-    # 4. Convert to quantized model
+    model.eval()
+    # Save original device to move model back later
+    original_device = next(model.parameters()).device
+    model.to('cpu')
+
+    # Select appropriate backend based on platform
+    # fbgemm is for x86 CPUs, qnnpack is for ARM/Apple Silicon
+    machine = platform.machine()
     
-    # Hint: Use quant.quantize_fx for FX Graph Mode quantization
-    # Or use quant.prepare and quant.convert for eager mode
+    # Set the quantization engine globally FIRST (before creating qconfig)
+    # This ensures convert_fx uses the correct backend
+    if machine == 'arm64' or machine == 'aarch64':
+        backend = 'qnnpack'  # For Apple Silicon / ARM
+    else:
+        backend = 'fbgemm'  # For x86 CPUs
     
-    pass
+    # Set the backend engine before creating qconfig
+    torch.backends.quantized.engine = backend
+    
+    # Verify backend is available
+    try:
+        qconfig = quant.get_default_qconfig(backend)
+    except Exception as e:
+        # If backend fails, try qnnpack as fallback
+        if backend != 'qnnpack':
+            print(f"Warning: {backend} backend failed ({e}), falling back to qnnpack")
+            backend = 'qnnpack'
+            torch.backends.quantized.engine = backend
+            qconfig = quant.get_default_qconfig(backend)
+        else:
+            raise RuntimeError(f"Quantization backend {backend} is not available: {e}")
+    
+    print(f"Using quantization backend: {backend}")
+    # Move calibration data to CPU (it's a list of tensors)
+    calibration_data_cpu = [data.to('cpu') for data in calibration_data]
+    example_input = calibration_data_cpu[0]
+
+    prepared_model = quantize_fx.prepare_fx(
+        model,
+        {'': qconfig},
+        example_input
+    )
+
+    with torch.no_grad():
+        for data in calibration_data_cpu:
+            _ = prepared_model(data)
+    
+    # Convert with explicit backend
+    quantized_model = quantize_fx.convert_fx(prepared_model)
+    
+    # Move original model back to its original device
+    model.to(original_device)
+    
+    # Quantized models must stay on CPU (quantization backends only work on CPU)
+    # Don't move to device - keep on CPU
+    return quantized_model
 
 
 def compare_models(
@@ -225,33 +385,28 @@ def compare_models(
     Returns:
         Dictionary with comparison metrics
     """
-    # TODO: Implement comprehensive comparison
-    # Measure:
-    # - Accuracy (both models)
-    # - Inference time (both models)
-    # - Memory usage (both models)
-    # - Speedup ratio
-    # - Accuracy drop
     
     # Create dummy input for timing
-    dummy_input = next(iter(test_loader))[0][:1].to(device)
+    # Quantized models need CPU input, FP32 can use the specified device
+    sample_batch = next(iter(test_loader))
+    dummy_input_fp32 = sample_batch[0][:1].to(device)
+    dummy_input_quantized = sample_batch[0][:1].to('cpu')
     
     results = {}
     
-    # TODO: Evaluate accuracy
-    # results['fp32_accuracy'] = ...
-    # results['quantized_accuracy'] = ...
-    # results['accuracy_drop'] = ...
-    
-    # TODO: Measure inference time
-    # results['fp32_time_ms'] = ...
-    # results['quantized_time_ms'] = ...
-    # results['speedup'] = ...
-    
-    # TODO: Measure memory
-    # results['fp32_memory_mb'] = ...
-    # results['quantized_memory_mb'] = ...
-    # results['memory_reduction'] = ...
+    results['fp32_accuracy'] = evaluate_accuracy(fp32_model, test_loader, device)
+    results['quantized_accuracy'] = evaluate_accuracy(quantized_model, test_loader, device)
+    results['accuracy_drop'] = results['fp32_accuracy'] - results['quantized_accuracy']
+
+    results['fp32_time_ms'] = measure_inference_time(fp32_model, dummy_input_fp32)
+    results['quantized_time_ms'] = measure_inference_time(quantized_model, dummy_input_quantized)
+    results['speedup'] = results['fp32_time_ms'] / results['quantized_time_ms']
+
+    fp32_memory = measure_memory_usage(fp32_model, dummy_input_fp32)
+    quantized_memory = measure_memory_usage(quantized_model, dummy_input_quantized)
+    results['fp32_memory_mb'] = fp32_memory['model_size_mb']
+    results['quantized_memory_mb'] = quantized_memory['model_size_mb']
+    results['memory_reduction'] = results['fp32_memory_mb'] / results['quantized_memory_mb']
     
     return results
 
@@ -281,49 +436,51 @@ def main():
     print("\n1. Model created")
     print(f"   Model parameters: {sum(p.numel() for p in model.parameters()):,}")
     
-    # Create dummy data for testing
-    # In practice, you'd use real datasets (CIFAR-10, ImageNet, etc.)
-    dummy_input = torch.randn(1, 3, 32, 32).to(device)
+    # Load ImageNet dataset
+    print("\n2. Loading ImageNet dataset...")
+    try:
+        test_loader = load_imagenet_dataset(batch_size=16, num_classes=10)
+        # Get a sample input from ImageNet
+        sample_batch = next(iter(test_loader))
+        dummy_input = sample_batch[0][:1].to(device)
+        print(f"   ImageNet dataset loaded successfully")
+    except FileNotFoundError as e:
+        print(f"   Error: {e}")
+        print("   Falling back to dummy data for testing")
+        dummy_input = torch.randn(1, 3, 32, 32).to(device)
+        # Create dummy test_loader for compatibility
+        dummy_data = torch.randn(100, 3, 32, 32)
+        dummy_labels = torch.randint(0, 10, (100,))
+        from torch.utils.data import TensorDataset
+        dummy_dataset = TensorDataset(dummy_data, dummy_labels)
+        test_loader = DataLoader(dummy_dataset, batch_size=16, shuffle=False)
     
-    print("\n2. Measuring FP32 model performance...")
-    # TODO: Measure baseline performance
-    # fp32_time = measure_inference_time(model, dummy_input)
-    # print(f"   FP32 inference time: {fp32_time:.3f} ms")
+    print("\n3. Measuring FP32 model performance...")
+    fp32_time = measure_inference_time(model, dummy_input)
+    print(f"   FP32 inference time: {fp32_time:.3f} ms")
     
-    # TODO: Prepare calibration data
-    # For this exercise, create dummy calibration data
-    # In practice, use real test data
-    print("\n3. Preparing calibration data...")
-    # calibration_data = [torch.randn(1, 3, 32, 32).to(device) for _ in range(100)]
-    
-    # TODO: Apply PTQ
-    print("\n4. Applying Post-Training Quantization...")
-    # quantized_model = apply_ptq(model, calibration_data, device)
-    
-    # TODO: Compare models
-    print("\n5. Comparing FP32 vs Quantized models...")
-    # results = compare_models(model, quantized_model, test_loader, device)
-    # print(f"\nResults:")
-    # print(f"  Accuracy: FP32={results['fp32_accuracy']:.2f}%, "
-    #       f"INT8={results['quantized_accuracy']:.2f}%, "
-    #       f"Drop={results['accuracy_drop']:.2f}%")
-    # print(f"  Speed: FP32={results['fp32_time_ms']:.3f}ms, "
-    #       f"INT8={results['quantized_time_ms']:.3f}ms, "
-    #       f"Speedup={results['speedup']:.2f}x")
-    # print(f"  Memory: FP32={results['fp32_memory_mb']:.2f}MB, "
-    #       f"INT8={results['quantized_memory_mb']:.2f}MB, "
-    #       f"Reduction={results['memory_reduction']:.1f}%")
-    
-    print("\n" + "=" * 70)
-    print("TODO: Implement the functions above to complete the challenge")
-    print("=" * 70)
-    print("\nTips:")
-    print("- Read PyTorch quantization docs: https://pytorch.org/docs/stable/quantization.html")
-    print("- Use quant.quantize_fx for FX Graph Mode (recommended)")
-    print("- Ensure calibration data is representative of real data")
-    print("- Measure multiple metrics: accuracy, speed, memory")
+    # Use ImageNet samples for calibration
+    print("\n4. Preparing calibration data...")
+    calibration_data = prepare_calibration_data(test_loader, num_samples=100)
+    # Move calibration data to device
+    calibration_data = [data.to(device) for data in calibration_data]
 
-
+    print("\n5. Applying Post-Training Quantization...")
+    quantized_model = apply_ptq(model, calibration_data, device)
+    
+    print("\n6. Comparing FP32 vs Quantized models...")
+    results = compare_models(model, quantized_model, test_loader, device)
+    print(f"\nResults:")
+    print(f"  Accuracy: FP32={results['fp32_accuracy']:.2f}%, "
+          f"INT8={results['quantized_accuracy']:.2f}%, "
+          f"Drop={results['accuracy_drop']:.2f}%")
+    print(f"  Speed: FP32={results['fp32_time_ms']:.3f}ms, "
+          f"INT8={results['quantized_time_ms']:.3f}ms, "
+          f"Speedup={results['speedup']:.2f}x")
+    print(f"  Memory: FP32={results['fp32_memory_mb']:.2f}MB, "
+          f"INT8={results['quantized_memory_mb']:.2f}MB, "
+          f"Reduction={results['memory_reduction']:.1f}%")
+          
 if __name__ == "__main__":
     main()
 
