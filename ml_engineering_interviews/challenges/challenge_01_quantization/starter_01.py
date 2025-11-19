@@ -167,8 +167,6 @@ def prepare_calibration_data(test_loader: DataLoader, num_samples: int = 100):
     Returns:
         List of input tensors for calibration
     """
-    # TODO: Extract calibration data from test_loader
-    # Hint: Collect input tensors (not labels) up to num_samples
     input_tensors = []
 
     for inputs, _ in test_loader:
