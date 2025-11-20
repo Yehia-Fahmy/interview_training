@@ -35,20 +35,33 @@ def one_sample_t_test(
             - reject_null: Whether to reject H0
             - confidence_interval: 95% CI for mean
     """
-    # TODO: Implement one-sample t-test from scratch
     # Steps:
     # 1. Calculate sample mean and standard deviation
+    sample_mean = np.mean(sample)
+    std_dev = np.std(sample, ddof=1)  # Use sample std (Bessel's correction: divide by n-1)
     # 2. Calculate standard error
+    std_err = std_dev / np.sqrt(len(sample))
     # 3. Calculate t-statistic: t = (sample_mean - population_mean) / standard_error
+    t = (sample_mean - population_mean) / std_err
     # 4. Calculate degrees of freedom: n - 1
+    degrees_of_freedom = len(sample) - 1
     # 5. Calculate p-value using t-distribution
+    p = 2 * stats.t.sf(abs(t), degrees_of_freedom)
     # 6. Calculate confidence interval
+    t_critical = stats.t.ppf(1 - alpha/2, degrees_of_freedom)
+    margin_of_error = t_critical * std_err
+    confidence_interval = (sample_mean - margin_of_error, sample_mean + margin_of_error)
     # 7. Determine if we reject H0 (p < alpha)
+    reject_h0 = p < alpha
     
-    # Hint: Use scipy.stats.t for t-distribution, but calculate t-statistic yourself
-    # For CI: mean ± t_critical * standard_error
-    
-    pass
+    # Return results as dictionary
+    return {
+        't_statistic': t,
+        'p_value': p,
+        'degrees_of_freedom': degrees_of_freedom,
+        'reject_null': reject_h0,
+        'confidence_interval': confidence_interval
+    }
 
 
 def two_sample_t_test(
