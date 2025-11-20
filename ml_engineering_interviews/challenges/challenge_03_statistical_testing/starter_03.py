@@ -84,19 +84,52 @@ def two_sample_t_test(
     Returns:
         Dictionary with t-statistic, p-value, degrees of freedom, etc.
     """
-    # TODO: Implement two-sample t-test
     # Steps:
     # 1. Calculate means and variances for both samples
-    # 2. Calculate pooled standard error (if equal_var) or separate (if not)
+    m1 = np.mean(sample1)
+    var_1 = np.var(sample1, ddof=1)
+    n1 = len(sample1)
+    m2 = np.mean(sample2)
+    var_2 = np.var(sample2, ddof=1)
+    n2 = len(sample2)
+    
+    # 2. Calculate standard error (pooled if equal_var, separate if not)
+    if equal_var:
+        # Pooled variance t-test (assumes equal variances)
+        pooled_var = ((n1 - 1) * var_1 + (n2 - 1) * var_2) / (n1 + n2 - 2)
+        std_err = np.sqrt(pooled_var * (1/n1 + 1/n2))
+        degrees_of_freedom = n1 + n2 - 2
+    else:
+        # Welch's t-test (unequal variances)
+        std_err = np.sqrt(var_1/n1 + var_2/n2)
+        # Welch-Satterthwaite degrees of freedom
+        df_numerator = (var_1/n1 + var_2/n2)**2
+        df_denominator = (var_1/n1)**2/(n1-1) + (var_2/n2)**2/(n2-1)
+        degrees_of_freedom = df_numerator / df_denominator
+    
     # 3. Calculate t-statistic
-    # 4. Calculate degrees of freedom
-    # 5. Calculate p-value
-    # 6. Calculate confidence interval for difference in means
+    t = (m1 - m2) / std_err
     
-    # Hint: For equal variances, use pooled standard error
-    # For unequal variances, use Welch's t-test (different df calculation)
+    # 4. Calculate p-value (two-tailed)
+    p_value = 2 * stats.t.sf(abs(t), degrees_of_freedom)
     
-    pass
+    # 5. Calculate confidence interval for difference in means
+    t_critical = stats.t.ppf(1 - alpha/2, degrees_of_freedom)
+    margin_of_error = t_critical * std_err
+    mean_diff = m1 - m2
+    confidence_interval = (mean_diff - margin_of_error, mean_diff + margin_of_error)
+    
+    # 6. Determine if we reject H0
+    reject_null = p_value < alpha
+
+    # Return results as dictionary
+    return {
+        't_statistic': t,
+        'p_value': p_value,
+        'degrees_of_freedom': degrees_of_freedom,
+        'reject_null': reject_null,
+        'confidence_interval': confidence_interval
+    }
 
 
 def paired_t_test(
