@@ -163,7 +163,7 @@ class MyNetwork(nn.Module):
 model = MyNetwork().to(device)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 # Learning rate scheduler for better convergence
-scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3, verbose=True)
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=3)
 criterion = nn.CrossEntropyLoss()
 
 # Print model summary
