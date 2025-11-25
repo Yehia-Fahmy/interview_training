@@ -26,7 +26,7 @@ print(f"Using device: {device}")
 input_dim = 224
 input_channels = 3
 num_layers = 5  # Increased depth for better capacity
-batch_size = 128  # Increased for better GPU utilization
+batch_size = 64  # Increased for better GPU utilization
 epochs = 30  # More epochs for better convergence
 learning_rate = 0.001
 weight_decay = 1e-4  # L2 regularization
