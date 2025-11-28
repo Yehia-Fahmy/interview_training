@@ -28,6 +28,10 @@ This repository is organized into three core areas that mirror typical ML engine
 │   ├── distributed_systems/           # General distributed systems
 │   ├── data_pipelines/                # Data pipeline design
 │   └── case_studies/                  # Real-world case studies
+├── knn.py                             # K-Nearest Neighbors implementation
+├── k_means.py                         # K-Means clustering implementation
+├── test_knn.py                        # KNN test suite with synthetic data
+├── test_kmeans.py                     # K-Means test suite with synthetic data
 ├── 04_nvidia_inference/               # NVIDIA inference engineer roadmap
 │   ├── week_01_pytorch/              # PyTorch 2.0 ecosystem
 │   ├── week_02_optimization/         # Model optimization
@@ -93,6 +97,32 @@ Build ML models, pipelines, and production-ready code.
 - Focus on code quality and design rationale
 - Use AI assistance as you would in interviews
 - Review solutions after attempting each exercise
+
+### ML Algorithm Implementations
+
+The repository includes from-scratch implementations of fundamental ML algorithms:
+
+- **K-Nearest Neighbors (KNN)** (`knn.py`): Classification algorithm that predicts based on the k nearest training examples
+- **K-Means Clustering** (`k_means.py`): Unsupervised clustering algorithm that partitions data into k clusters
+
+**Testing:**
+- `test_knn.py`: Generates synthetic classification data and tests KNN predictions
+- `test_kmeans.py`: Generates synthetic clustering data and tests K-Means with visualization
+
+**Usage:**
+```bash
+# Test KNN implementation
+python test_knn.py
+
+# Test K-Means implementation
+python test_kmeans.py
+```
+
+Both test scripts include:
+- Synthetic data generation
+- Model training/testing
+- Visualization of results
+- Performance metrics
 
 ### 4. System Design (`03_system_design/`)
 

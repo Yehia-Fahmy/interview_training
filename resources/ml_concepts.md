@@ -2,6 +2,29 @@
 
 Key concepts for the Data/ML Coding interview.
 
+## Fundamental ML Algorithms
+
+### K-Nearest Neighbors (KNN)
+- **Type**: Supervised learning (classification/regression)
+- **How it works**: Predicts based on k nearest training examples
+- **Distance metric**: Euclidean distance (squared)
+- **Implementation**: See `knn.py` and `test_knn.py` in repository root
+- **Key characteristics**:
+  - Lazy learning (no explicit training phase)
+  - Non-parametric
+  - Sensitive to k value and distance metric
+
+### K-Means Clustering
+- **Type**: Unsupervised learning (clustering)
+- **How it works**: Partitions data into k clusters by minimizing within-cluster variance
+- **Algorithm**: Iterative optimization of centroids
+- **Implementation**: See `k_means.py` and `test_kmeans.py` in repository root
+- **Key characteristics**:
+  - Requires specifying k (number of clusters)
+  - Sensitive to initialization
+  - Converges to local optimum
+  - Metrics: Within-Cluster Sum of Squares (WCSS)
+
 ## Model Evaluation
 
 - **Metrics**: Accuracy, Precision, Recall, F1, ROC-AUC
