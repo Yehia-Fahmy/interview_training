@@ -34,7 +34,7 @@
 ### Day 6-7: Mock Practice (4 hours)
 - [ ] Practice 2-3 challenges with timer (45-60 min each)
 - [ ] Record yourself or practice with friend
-- [ ] Review `case_studies/case_study_01_chatgpt.md` (30 min)
+- [ ] Review `case_studies/case_study_01_chatgpt.md` (30 min) - LLM Serving Architecture
 
 ---
 
@@ -45,8 +45,8 @@
 - [ ] Real-time Analytics (`distributed_systems/challenge_02_real_time_analytics.md`)
 
 ### Day 10-11: Case Studies
-- [ ] Netflix Recommendations (`case_studies/case_study_02_netflix_recommendations.md`)
-- [ ] Uber Real-time (`case_studies/case_study_03_uber_realtime.md`)
+- [ ] Recommendation System (`case_studies/case_study_02_netflix_recommendations.md`)
+- [ ] Real-time Matching (`case_studies/case_study_03_uber_realtime.md`)
 
 ### Day 12-14: Final Prep
 - [ ] Review `CHEAT_SHEET.md` daily
@@ -66,7 +66,7 @@
 ### Should Do (If you have 1 week):
 - Add Training Pipeline challenge
 - Add Scalable API challenge
-- Review ChatGPT case study
+- Review LLM Serving case study
 
 ### Nice to Have (If you have 2 weeks):
 - All remaining challenges

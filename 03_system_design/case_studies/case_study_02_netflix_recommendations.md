@@ -1,8 +1,8 @@
-# Case Study 02: Netflix Recommendation System
+# Case Study 02: Recommendation System Architecture
 
 ## Overview
 
-Netflix's recommendation system serves personalized content to 200M+ subscribers, driving 80% of content watched. This case study explores how Netflix likely architected their recommendation system.
+This case study explores how a large-scale recommendation system serving personalized content to 200M+ users might be architected, where recommendations drive a significant portion of user engagement.
 
 ## Scale Requirements
 
@@ -17,7 +17,7 @@ Netflix's recommendation system serves personalized content to 200M+ subscribers
 ### High-Level Architecture
 
 ```
-[User] → [Netflix App/Web]
+[User] → [Client Application]
             ↓
     [Recommendation API]
             ↓
@@ -232,7 +232,7 @@ When designing recommendation systems:
 
 ## References
 
-- Netflix Tech Blog
-- "The Netflix Recommender System" research papers
 - Industry best practices for recommendation systems
+- Research papers on large-scale recommendation systems
+- Technical blogs on recommendation system architecture
 

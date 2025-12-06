@@ -138,7 +138,7 @@ Request → Candidate Generation (1000s) → Ranking (Top-N) → Response
 ### Day 6-7: Mock Practice
 - Time yourself (45-60 min)
 - Practice explaining out loud
-- Review case studies (ChatGPT, Netflix)
+- Review case studies (LLM Serving, Recommendation System)
 
 ---
 

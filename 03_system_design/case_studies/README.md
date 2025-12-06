@@ -4,9 +4,9 @@ This directory contains real-world system design case studies that demonstrate h
 
 ## Case Studies
 
-1. **Case Study 01: ChatGPT** - How OpenAI serves ChatGPT at scale
-2. **Case Study 02: Netflix Recommendations** - Netflix's recommendation system architecture
-3. **Case Study 03: Uber Real-time** - Uber's real-time matching and pricing system
+1. **Case Study 01: Large Language Model Serving** - How to serve LLMs at scale
+2. **Case Study 02: Recommendation System** - Large-scale recommendation system architecture
+3. **Case Study 03: Real-time Matching** - Real-time matching and pricing system
 
 ## How to Use
 

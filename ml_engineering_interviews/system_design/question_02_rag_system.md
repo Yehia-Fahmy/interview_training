@@ -1,6 +1,5 @@
 # System Design: RAG Serving System
 
-**Target Role:** EvenUp  
 **Difficulty:** ⭐⭐⭐  
 **Time:** 45 minutes
 

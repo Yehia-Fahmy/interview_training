@@ -1,6 +1,5 @@
 # System Design: Automated Model Optimization Platform
 
-**Target Role:** NVIDIA  
 **Difficulty:** ⭐⭐⭐  
 **Time:** 45 minutes
 

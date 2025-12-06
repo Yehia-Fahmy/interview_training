@@ -1,9 +1,4 @@
 # ML Engineering Interview Preparation
-## NVIDIA & EvenUp Roles
-
-**Target Roles:**
-- **NVIDIA**: Senior Deep Learning Software Engineer, Inference and Model Optimization
-- **EvenUp**: Senior Machine Learning Engineer (LLMs & Document AI + Systems)
 
 **Timeline:** 2-4 weeks focused preparation
 
@@ -13,7 +8,7 @@
 
 1. **Read this document** - Understand the preparation plan
 2. **Complete Challenge 1** - Post-Training Quantization (foundational)
-3. **Complete Challenge 3** - Statistical Hypothesis Testing (EvenUp requirement)
+3. **Complete Challenge 3** - Statistical Hypothesis Testing
 4. **Review System Design Questions** - Practice with follow-ups
 5. **Prepare 2-3 technical deep dives** - With concrete metrics
 
@@ -26,28 +21,27 @@
 **1. PyTorch Proficiency** ⭐⭐⭐
 - Model training, fine-tuning, optimization
 - HuggingFace Transformers integration
-- **NVIDIA**: torch.compile, FX graphs, model graph extraction
-- **EvenUp**: Fine-tuning workflows, LoRA/QLoRA, prompt engineering
+- torch.compile, FX graphs, model graph extraction
+- Fine-tuning workflows, LoRA/QLoRA, prompt engineering
 
 **2. LLM Optimization & Deployment** ⭐⭐⭐
 - Quantization (INT8, INT4, mixed precision)
 - Model compression techniques
 - Inference optimization strategies
-- **NVIDIA**: TensorRT, TRT-LLM, kernel-level optimization
-- **EvenUp**: RAG optimization, embedding efficiency, retrieval performance
+- TensorRT, TRT-LLM, kernel-level optimization
+- RAG optimization, embedding efficiency, retrieval performance
 
 **3. System Design for ML** ⭐⭐⭐
 - End-to-end ML system architecture
 - Scalable inference serving
 - Model versioning and deployment pipelines
-- **NVIDIA**: Automated optimization platform, multi-GPU serving
-- **EvenUp**: RAG pipeline, document processing, evaluation frameworks
+- Automated optimization platform, multi-GPU serving
+- RAG pipeline, document processing, evaluation frameworks
 
 **4. Evaluation & Statistical Testing** ⭐⭐
 - Statistical hypothesis testing implementation
 - Model evaluation methodologies
 - A/B testing infrastructure
-- **EvenUp**: Explicitly tested in coding interview
 
 **5. Python Coding Skills** ⭐⭐⭐
 - Clean, production-ready code
@@ -55,15 +49,15 @@
 - Data structures and optimization
 - Error handling and testing
 
-### Role-Specific Skills
+### Advanced Skills
 
-**NVIDIA-Specific:**
+**Deep Learning Optimization:**
 - PyTorch 2.0 ecosystem (torch.compile, torch.export, TorchDynamo)
 - GPU profiling and performance analysis
 - CUDA/Triton awareness (understanding > implementation)
 - Distributed inference (tensor parallelism, sequence parallelism)
 
-**EvenUp-Specific:**
+**LLM & Document Processing:**
 - Statistical hypothesis testing implementation
 - Document AI and entity extraction
 - RAG system design and optimization
@@ -74,7 +68,7 @@
 
 ## Interview Formats
 
-### NVIDIA Interview Structure
+### Typical ML Engineering Interview Structure
 
 1. **Hiring Manager (30 min)**
    - Technical deep dive on PyTorch 2.0
@@ -90,7 +84,7 @@
    - System design thinking
    - Collaboration and impact
 
-### EvenUp Interview Structure
+### Alternative Interview Structure
 
 1. **Hiring Manager (30 min)**
    - ML concepts and modeling approaches
@@ -127,7 +121,7 @@
 
 **Day 3-4: LLM Optimization & Deployment**
 - Challenge 4: Inference Performance Optimization
-- Challenge 7: Attention with KV-Cache (NVIDIA)
+- Challenge 7: Attention with KV-Cache
 - Understand batching and serving patterns
 
 **Day 5: Evaluation & Statistical Testing**
@@ -137,12 +131,12 @@
 
 ### Week 2: Advanced Topics & System Design
 
-**Day 6-7: PyTorch 2.0 Ecosystem (NVIDIA Focus)**
+**Day 6-7: PyTorch 2.0 Ecosystem**
 - Challenge 5: FX Graph Extraction
 - Challenge 6: Custom FX Pass Implementation
 - Understand torch.compile internals
 
-**Day 8-9: RAG & Document AI (EvenUp Focus)**
+**Day 8-9: RAG & Document AI**
 - Challenge 8: RAG System Implementation
 - Challenge 9: Document Entity Extraction
 - Design retrieval and generation pipeline
@@ -170,15 +164,15 @@ ml_engineering_interviews/
 │   └── [more challenges...]
 │
 └── system_design/              # System design questions
-    ├── question_01_optimization_platform.md  # NVIDIA focus
-    └── question_02_rag_system.md             # EvenUp focus
+    ├── question_01_optimization_platform.md
+    └── question_02_rag_system.md
 ```
 
 ### GPU Acceleration Support
 
 All ML training code automatically detects and uses the best available device:
 - **MPS (M-series GPU)** - Apple Silicon acceleration (M1, M2, M3, etc.) - priority
-- **CUDA** - NVIDIA GPU acceleration
+- **CUDA** - GPU acceleration
 - **CPU** - Fallback when no GPU available
 
 ---
@@ -202,7 +196,7 @@ Implement PTQ for a pre-trained model and measure accuracy-speed trade-offs.
 - `solution_01.py` - Production-ready solution
 
 ### Challenge 3: Statistical Hypothesis Testing ⭐⭐⭐
-**Time:** 2-3 hours | **Relevance:** EvenUp (Critical)
+**Time:** 2-3 hours | **Relevance:** Critical
 
 Implement statistical hypothesis testing from scratch to compare model performance.
 
@@ -222,7 +216,7 @@ Implement statistical hypothesis testing from scratch to compare model performan
 
 ## System Design Questions
 
-### Question 1: Automated Model Optimization Platform (NVIDIA)
+### Question 1: Automated Model Optimization Platform
 Design a platform that automatically optimizes PyTorch models for inference.
 
 **Key Components:**
@@ -237,7 +231,7 @@ Design a platform that automatically optimizes PyTorch models for inference.
 - How do you scale to 1000s of models?
 - How do you handle rollback if optimized model fails?
 
-### Question 2: RAG Serving System (EvenUp)
+### Question 2: RAG Serving System
 Design a Retrieval-Augmented Generation system for document-based question answering.
 
 **Key Components:**
@@ -305,8 +299,8 @@ Before your interviews, you should be able to:
 5. RAG architecture patterns
 
 ### Important (Medium ROI)
-1. TensorRT developer guide (NVIDIA)
-2. CUDA programming basics (NVIDIA)
+1. TensorRT developer guide
+2. CUDA programming basics
 3. Flash Attention paper
 4. LoRA/QLoRA papers
 5. System design patterns for ML

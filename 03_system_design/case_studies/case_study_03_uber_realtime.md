@@ -1,8 +1,8 @@
-# Case Study 03: Uber Real-time Matching System
+# Case Study 03: Real-time Matching System
 
 ## Overview
 
-Uber's real-time matching system connects riders with drivers in real-time, handling millions of requests per day across hundreds of cities. This case study explores how Uber likely architected their matching and pricing system.
+This case study explores how a real-time matching system connecting users with service providers might be architected, handling millions of requests per day across hundreds of cities.
 
 ## Scale Requirements
 
@@ -18,14 +18,14 @@ Uber's real-time matching system connects riders with drivers in real-time, hand
 ### High-Level Architecture
 
 ```
-[Rider App] → [Request Service] → [Matching Engine]
-                                    ├── [Driver Location Service]
+[Client App] → [Request Service] → [Matching Engine]
+                                    ├── [Provider Location Service]
                                     ├── [ETA Service]
                                     └── [Pricing Service]
                                          ↓
                                     [Notification Service]
                                          ↓
-                                    [Driver App]
+                                    [Provider App]
 ```
 
 ## Key Components
@@ -33,24 +33,24 @@ Uber's real-time matching system connects riders with drivers in real-time, hand
 ### 1. Request Service
 
 **Functions:**
-- Receive ride requests from riders
+- Receive service requests from users
 - Validate requests
 - Route to appropriate matching engine (by city/region)
 - Handle request lifecycle
 
 **Request Flow:**
-1. Rider requests ride
+1. User requests service
 2. Request validated (location, payment, etc.)
 3. Route to matching engine for city
 4. Start matching process
 5. Return match result
 
-### 2. Driver Location Service
+### 2. Provider Location Service
 
 **Functions:**
-- Track driver locations in real-time
-- Maintain driver availability
-- Update driver status (available, on-trip, offline)
+- Track provider locations in real-time
+- Maintain provider availability
+- Update provider status (available, on-service, offline)
 - Geospatial indexing for fast lookups
 
 **Implementation:**
@@ -61,11 +61,11 @@ Uber's real-time matching system connects riders with drivers in real-time, hand
 
 **Data Model:**
 ```
-Driver {
-  driver_id: "123",
+Provider {
+  provider_id: "123",
   location: {lat: 37.7749, lng: -122.4194},
   status: "available",
-  vehicle_type: "standard",
+  service_type: "standard",
   last_update: timestamp
 }
 ```
@@ -75,23 +75,23 @@ Driver {
 **Matching Algorithm:**
 
 1. **Find Candidates**:
-   - Query drivers within radius (e.g., 5 miles)
-   - Filter by availability, vehicle type
-   - Consider driver preferences
+   - Query providers within radius (e.g., 5 miles)
+   - Filter by availability, service type
+   - Consider provider preferences
 
-2. **Score Drivers**:
+2. **Score Providers**:
    - ETA to pickup location
-   - Driver rating
-   - Driver distance
+   - Provider rating
+   - Provider distance
    - Historical performance
 
 3. **Select Best Match**:
    - Rank by score
-   - Consider driver preferences
-   - Assign ride
+   - Consider provider preferences
+   - Assign service
 
 **Optimization:**
-- Pre-compute driver clusters
+- Pre-compute provider clusters
 - Cache common queries
 - Parallel processing
 - Batching (match multiple requests together)
@@ -104,7 +104,7 @@ Driver {
 - Update ETAs in real-time
 
 **Implementation:**
-- **Route Planning**: Google Maps API, internal routing
+- **Route Planning**: Mapping API, internal routing
 - **Traffic Data**: Real-time traffic information
 - **Historical Data**: Historical travel times
 - **Machine Learning**: Predict ETAs using ML models
@@ -140,9 +140,9 @@ Driver {
 ### 6. Notification Service
 
 **Functions:**
-- Notify drivers of ride requests
-- Notify riders of driver assignment
-- Send updates (driver ETA, arrival, etc.)
+- Notify providers of service requests
+- Notify users of provider assignment
+- Send updates (provider ETA, arrival, etc.)
 
 **Implementation:**
 - Push notifications (APNs, FCM)
@@ -153,15 +153,15 @@ Driver {
 ### 7. Real-time Data Pipeline
 
 **Event Stream:**
-- Driver location updates
-- Ride requests
-- Ride status changes
+- Provider location updates
+- Service requests
+- Service status changes
 - Pricing updates
 
 **Processing:**
 - Apache Kafka for event streaming
 - Real-time processing (Flink, Storm)
-- Update driver locations
+- Update provider locations
 - Trigger matching
 - Update pricing
 
@@ -201,25 +201,25 @@ Driver {
 - Simple matching algorithm
 - Basic geospatial queries
 - Manual pricing
-- ~10K rides/day
+- ~10K requests/day
 
 ### Phase 2: Multiple Cities
 - City-specific matching engines
 - Optimized geospatial indexing
 - Automated pricing
-- ~100K rides/day
+- ~100K requests/day
 
 ### Phase 3: Global Scale
 - Multi-region deployment
 - Advanced matching algorithms
 - ML-based pricing
-- ~1M rides/day
+- ~1M requests/day
 
-### Phase 4: Current Scale
+### Phase 4: Large Scale
 - Real-time matching at scale
 - Advanced ML models
 - Comprehensive optimization
-- Millions of rides/day
+- Millions of requests/day
 
 ## Key Learnings
 
@@ -243,7 +243,7 @@ When designing real-time matching systems:
 
 ## References
 
-- Uber Engineering Blog
-- "How Uber Works" technical talks
 - Industry best practices for real-time systems
+- Technical talks on real-time matching systems
+- Research papers on geospatial matching algorithms
 

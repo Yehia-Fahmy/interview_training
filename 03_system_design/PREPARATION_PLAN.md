@@ -146,7 +146,7 @@ This plan is designed for ML engineers preparing for system design interviews, w
 - Cost optimization for LLM APIs
 
 **Practice:**
-- Challenge: Design a ChatGPT-like system
+- Challenge: Design an LLM serving system
 - Challenge: Design a RAG system for document Q&A
 - Challenge: Design a system for fine-tuning LLMs at scale
 - Key Questions: How do you handle context windows? How do you optimize costs?
@@ -341,7 +341,7 @@ This plan is designed for ML engineers preparing for system design interviews, w
 - High Scalability blog
 - AWS Architecture Blog
 - Google Cloud Architecture Center
-- Netflix Tech Blog
+- Technical blogs on recommendation systems
 
 ### Practice Platforms
 - Pramp (mock interviews)

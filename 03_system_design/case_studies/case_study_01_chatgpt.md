@@ -1,8 +1,8 @@
-# Case Study 01: ChatGPT Architecture
+# Case Study 01: Large Language Model Serving Architecture
 
 ## Overview
 
-ChatGPT is OpenAI's conversational AI system that serves millions of users with low-latency text generation. This case study explores how OpenAI likely architected the system to handle scale, cost, and quality.
+This case study explores how a conversational AI system serving millions of users with low-latency text generation might be architected to handle scale, cost, and quality.
 
 ## Scale Requirements
 
@@ -20,9 +20,9 @@ ChatGPT is OpenAI's conversational AI system that serves millions of users with 
 [Users] → [Load Balancer] → [API Gateway] → [Request Router]
                                                     ↓
                                     [Model Server Pool]
-                                    ├── GPT-4 Servers (Premium)
-                                    ├── GPT-3.5 Servers (Standard)
-                                    └── GPT-3.5 Turbo (Fast)
+                                    ├── Large Model Servers (Premium)
+                                    ├── Medium Model Servers (Standard)
+                                    └── Small Model Servers (Fast)
                                          ↓
                                     [GPU Clusters]
                                          ↓
@@ -46,8 +46,8 @@ ChatGPT is OpenAI's conversational AI system that serves millions of users with 
   - Current load
 
 **Routing Logic:**
-- Free users → GPT-3.5 Turbo (faster, cheaper)
-- Paid users → GPT-4 (higher quality)
+- Free users → Smaller models (faster, cheaper)
+- Paid users → Larger models (higher quality)
 - Complex requests → Larger models
 - Simple requests → Smaller models
 
@@ -192,7 +192,7 @@ ChatGPT is OpenAI's conversational AI system that serves millions of users with 
 - Model optimization
 - ~10M requests/day
 
-### Phase 4: Current Scale
+### Phase 4: Large Scale
 - Tiered serving
 - Advanced caching
 - Cost optimization
@@ -219,7 +219,7 @@ When designing LLM serving systems:
 
 ## References
 
-- OpenAI API documentation
-- Public talks and blog posts about ChatGPT infrastructure
 - Industry best practices for LLM serving
+- Public talks and blog posts about large-scale LLM infrastructure
+- Research papers on efficient LLM serving
 
