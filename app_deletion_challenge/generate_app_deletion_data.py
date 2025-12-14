@@ -13,7 +13,7 @@ from pathlib import Path
 np.random.seed(42)
 
 # Configuration
-N_SAMPLES = 15000
+N_SAMPLES = 1500
 POSITIVE_CLASS_RATIO = 0.20  # ~20% deletion rate
 OUTPUT_PATH = Path(__file__).parent / "data.csv"
 
