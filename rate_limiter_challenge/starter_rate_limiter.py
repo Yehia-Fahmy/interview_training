@@ -15,13 +15,20 @@ Time Budget: 90 minutes total
 
 import time
 from typing import Dict, Any, Optional
-from collections import defaultdict
+from collections import OrderedDict, defaultdict, deque
 from dataclasses import dataclass
 
 
 # =============================================================================
 # Your Implementation Here
 # =============================================================================
+
+class Request:
+    def __init__(self, client_id, timestamp, endpoint = None, client_tier = None) -> None:
+        self.timestamp = timestamp
+        self.client_id = client_id
+        self.endpoint = endpoint
+        self.client_tier = client_tier
 
 class RateLimiter:
     """
@@ -37,11 +44,29 @@ class RateLimiter:
     
     def __init__(self, max_requests: int, window_seconds: int):
         """Initialize rate limiter with given limits."""
-        pass
+        self.clients = defaultdict(deque)
+        self.window = window_seconds
+        self.max_requests = max_requests
     
-    def is_allowed(self, client_id: str) -> bool:
+    def is_allowed(self, client_id: str, insert: bool = True) -> bool:
         """Check if request from client_id should be allowed."""
-        pass
+        if not client_id in self.clients:
+            self.clients[client_id] = deque[Request]()
+        expiry_time = time.time() - self.window
+        while len(self.clients[client_id]) >= 1:
+            oldest_request = self.clients[client_id].popleft()
+            # print(f"self.clients[client_id] = {self.clients[client_id]}")
+            # print(f"oldest_request.timestamp = {oldest_request.timestamp % 1766073000}, expiry_time = {expiry_time % 1766073000}")
+            if oldest_request.timestamp >= expiry_time:
+                self.clients[client_id].appendleft(oldest_request)
+                break
+        if len(self.clients[client_id]) >= self.max_requests:
+            return False
+        
+        if insert:
+            req = Request(client_id, time.time())
+            self.clients[client_id].append(req)
+        return True
     
     def get_limit_info(self, client_id: str) -> Dict[str, Any]:
         """
@@ -49,8 +74,33 @@ class RateLimiter:
         
         Returns dict with: allowed, remaining, reset_at, retry_after
         """
-        pass
+        allowed = self.is_allowed(client_id, False)
+        remaining = self.max_requests - len(self.clients[client_id])
+        reset_at = self.clients[client_id][0].timestamp + self.window if not allowed else 0
+        next_request = reset_at - time.time() if not allowed else 0
+        return {
+            "allowed": allowed,
+            "remaining": remaining,
+            "reset_at": reset_at,
+            "retry_after": next_request,
+        }
 
+
+"""
+
+iterate through entries and pop all entries older than time.time() - window_seconds
+
+return len(entries) < max_requests
+per client = [entry1, entry2, entry3]
+
+
+allowed = is_allowed()
+^ removes all older requests
+remaining <= calculated with len(entries)
+reset_at = ?
+next_request = oldest non expired request + windows_seconds
+
+"""
 
 # =============================================================================
 # Test Harness
