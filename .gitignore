@@ -43,6 +43,7 @@ data/
 models/
 experiments/
 model_registry/
+image_caching_challenge/images
 
 # OS
 .DS_Store
